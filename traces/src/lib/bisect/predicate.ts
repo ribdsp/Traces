@@ -167,20 +167,117 @@ export function validateSelector(input: unknown): ValidationResult<string> {
 }
 
 /**
+ * Narrows an unknown value to boolean | string. Used instead of `any` when reading a DOM property
+ * whose static type isn't known at this layer — see `readElementProperty` below.
+ */
+function isBooleanOrString(value: unknown): value is boolean | string {
+  return typeof value === 'boolean' || typeof value === 'string'
+}
+
+/**
+ * Read a live DOM property (not the attribute — `input.value` and `getAttribute('value')` diverge
+ * the instant a user types, and observing what the user saw is the entire point). `Element` doesn't
+ * type `disabled`/`checked`/`readOnly`/`value` generically — they only exist on specific HTML
+ * interfaces — so this goes through `unknown` and narrows, rather than reaching for `any`.
+ */
+function readElementProperty(element: Element, property: string): boolean | string | undefined {
+  const value = (element as unknown as Record<string, unknown>)[property]
+  return isBooleanOrString(value) ? value : undefined
+}
+
+/**
+ * Tag-name check rather than `instanceof HTMLSelectElement`: recordings replay inside rrweb's
+ * iframe (docs/threat-model.md), which has its own global `HTMLSelectElement` constructor, so an
+ * `instanceof` check against this frame's constructor can silently return false for a real
+ * `<select>` living in that other realm.
+ */
+function isSelectElement(element: Element): element is HTMLSelectElement {
+  return element.tagName === 'SELECT'
+}
+
+/**
+ * `optionCount` only means something on a `<select>`. Anything else is a readable error, not a
+ * silent `false` — a caller asking `optionCount` of a `<div>` almost certainly pointed the selector
+ * at the wrong element, and `false` would look like a legitimate (if surprising) answer instead of a
+ * mistake to fix. This is why `evaluatePredicate`'s return type says `boolean` but this path throws;
+ * see the final report for that tension spelled out.
+ */
+function countOptions(element: Element): number {
+  if (!isSelectElement(element)) {
+    throw new Error(
+      `optionCount only applies to <select> elements, got <${element.tagName.toLowerCase()}>. ` +
+        'Point the selector at the <select> itself, not a wrapping element.',
+    )
+  }
+  return element.options.length
+}
+
+/**
+ * `element.offsetParent === null` for `display: none` and for elements with no layout box (zero
+ * height counts, however present the element is in the tree), plus computed `visibility` and
+ * `opacity`. Note: jsdom does not implement layout, so `offsetParent` is always `null` there and
+ * every element reads as not-visible under test — this is written for, and correct in, a real
+ * browser, which is what actually replays a recording.
+ */
+function isElementVisible(element: Element): boolean {
+  const htmlElement = element as HTMLElement
+  if (htmlElement.offsetParent === null) return false
+  const style = getComputedStyle(element)
+  if (style.visibility === 'hidden' || style.visibility === 'collapse') return false
+  return Number(style.opacity) !== 0
+}
+
+/** Case-insensitive, on textContent, trimmed. */
+function containsText(element: Element, text: string): boolean {
+  const content = (element.textContent ?? '').trim().toLowerCase()
+  return content.includes(text.trim().toLowerCase())
+}
+
+/**
  * Evaluate a validated predicate against a live element.
  *
- * `element` is null when nothing matched at this point in time. That case must return false *and*
- * be reported as `elementMissing` by the caller — see BisectStep. An agent that cannot tell "the
- * button was enabled" from "there was no button yet" reports the wrong moment with full confidence.
+ * `element` is null when nothing matched at this point in time. That case returns false *for every
+ * variant*, checked once up front before dispatching on `kind` — including `{ kind: 'exists', equals:
+ * true }`, which might look like it should throw or need special handling, and doesn't. The caller
+ * reports absence separately via `BisectStep.elementMissing`, so "false" here never has to also mean
+ * "missing" — see the null-element test in predicate.test.ts.
  *
- * TODO(riko), Day 2. The switch is exhaustive, so TypeScript will name any variant you forget.
- *   - propertyEquals: read the property off the element, not the attribute. `input.value` and
- *     `[value]` diverge the instant a user types, and the whole point is to observe what the user saw
- *   - visible: offsetParent plus computed visibility and opacity — an element with zero height is
- *     not visible however present it is in the tree
- *   - optionCount: only meaningful on a <select>; anything else is a readable error, not false
- *   - textContains: case-insensitive, on textContent, trimmed
+ * The switch is exhaustive over `Predicate['kind']`: the `default` branch assigns to a `never`, so
+ * adding a variant to the union without a case here fails the build instead of silently falling
+ * through to `false`.
  */
-export function evaluatePredicate(_predicate: Predicate, _element: Element | null): boolean {
-  throw new Error('evaluatePredicate: not implemented')
+export function evaluatePredicate(predicate: Predicate, element: Element | null): boolean {
+  if (element === null) return false
+
+  switch (predicate.kind) {
+    case 'propertyEquals':
+      return readElementProperty(element, predicate.property) === predicate.equals
+
+    case 'attributeExists':
+      return element.hasAttribute(predicate.attribute)
+
+    case 'attributeEquals':
+      return element.getAttribute(predicate.attribute) === predicate.equals
+
+    case 'optionCount':
+      return countOptions(element) === predicate.equals
+
+    case 'visible':
+      return isElementVisible(element) === predicate.equals
+
+    case 'textContains':
+      return containsText(element, predicate.text)
+
+    case 'exists':
+      // `element` is non-null here, so existence is true; the predicate holds when the caller
+      // wanted existence. `{ kind: 'exists', equals: false }` against a present element is false —
+      // it does not mean "treat this like elementMissing", which is a distinct, separately-reported
+      // signal (see BisectStep in types/domain.ts).
+      return predicate.equals === true
+
+    default: {
+      const exhaustive: never = predicate
+      throw new Error(`Unsupported predicate kind: ${JSON.stringify(exhaustive)}`)
+    }
+  }
 }
