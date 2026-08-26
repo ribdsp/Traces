@@ -28,6 +28,49 @@ export function activeBug(search: string): Bug | null {
   return isBug(value) ? value : null
 }
 
+const SCENARIO_KEY = 'bugbait:scenario'
+
+/**
+ * Read `?bug=` once, remember it for the rest of the browser session, and take it back out of the
+ * address bar.
+ *
+ * The stripping is the load-bearing half. rrweb stamps `window.location.href` into every Meta event,
+ * and `read_session_meta` hands those URLs to the agent as the session's routes — so a recording made
+ * at `/checkout?bug=empty-province` opens by telling the agent which bug it is looking for, and the
+ * investigation becomes a re-enactment. Removing the parameter before the first snapshot costs nothing:
+ * the URL you *type* is still `/checkout?bug=empty-province`, so the scenario is as reproducible as it
+ * was, and `sessionStorage` carries it across the navigation from the cart and across a reload.
+ *
+ * Returns null rather than throwing when storage is unavailable — a private-mode browser that cannot
+ * remember the scenario should still render an ordinary, working checkout.
+ */
+export function armScenario(): Bug | null {
+  if (typeof window === 'undefined') return null
+
+  const fromUrl = activeBug(window.location.search)
+  try {
+    if (fromUrl) {
+      window.sessionStorage.setItem(SCENARIO_KEY, fromUrl)
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`)
+      return fromUrl
+    }
+    const stored = window.sessionStorage.getItem(SCENARIO_KEY)
+    return isBug(stored) ? stored : null
+  } catch {
+    return fromUrl
+  }
+}
+
+/** Forgets the armed scenario, so the next take starts from a known state. */
+export function disarmScenario(): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.removeItem(SCENARIO_KEY)
+  } catch {
+    // Nothing to clear if storage was never available.
+  }
+}
+
 export type BugSpec = {
   bug: Bug
   /** One line, shown in the dev banner so whoever is recording knows what they armed. */
@@ -72,13 +115,60 @@ export const BUG_SPECS: Record<Bug, BugSpec> = {
   },
 }
 
-/**
- * TODO(vicko), Day 5:
- *   - implement each bug inside the checkout page, driven by `activeBug(location.search)`
- *   - keep the timing stable: the empty-province request should resolve at a consistent moment (~12s
- *     into a natural interaction) so the recording is comparable across takes
- *   - never log the mechanism to the console. A recording that contains the answer in plain text makes
- *     the whole investigation theatre, and a judge will notice
- *   - no real network calls to anything external: stub the endpoints inside the app so the recordings
- *     are self-contained and no third party appears in them
+/*
+ * Day 5 (vicko) — implemented. Where each half of that assignment landed, so whoever changes a bug
+ * next knows which file to open:
+ *
+ *   - the bugs themselves live in `app/checkout/page.tsx`, driven by `activeBug(location.search)`
+ *   - the endpoints are stubbed *inside* this app — `app/api/provinces/route.ts` and
+ *     `app/api/cities/route.ts` — so a recording contacts no third party and reproduces offline
+ *   - the timings are the constants below, kept here rather than inline so a take stays comparable
+ *   - the mechanism is never logged. The only console output any bug produces is the same misleading
+ *     validation line the UI already shows the user; see `MISLEADING_POSTCODE_ERROR`
  */
+
+/**
+ * How the armed scenario reaches the API stubs.
+ *
+ * A request header, deliberately, and not a query parameter — `GET /api/provinces?bug=empty-province`
+ * would name the bug inside the recorded network log, and the recorder records URLs. The agent is
+ * supposed to notice that a `200 OK` came back holding `array, 0 items`; it is not supposed to be
+ * handed the answer in the query string. Headers are not recorded (see lib/record.ts), so this stays
+ * out of the evidence.
+ */
+export const SCENARIO_HEADER = 'x-bugbait-scenario'
+
+/**
+ * Stub latency, in ms.
+ *
+ * `provinces` is the load-bearing one. The request fires when /checkout mounts and resolves this long
+ * after, which — following the recording procedure in README.md, where the cart takes about ten
+ * seconds — puts it at roughly 12s into the session. The symptom does not surface until the second
+ * step of the form, around 28s. That gap of ~16 seconds between cause and symptom is the entire
+ * reason `bisect` exists, so it is a number worth keeping stable rather than tuning for feel.
+ *
+ * `cities` is shorter than the time it takes a human to read the step-2 heading, which is what makes
+ * the race bug reproduce every time: the select is mounted and painted before the response lands.
+ */
+export const LATENCY_MS: Readonly<Record<'provinces' | 'cities', number>> = {
+  provinces: 1500,
+  cities: 900,
+}
+
+/**
+ * How long after the payment step appears before the promo banner drops over the Pay button.
+ *
+ * Not zero, on purpose: the button is genuinely clickable for these four seconds. That gives the
+ * overlay bug a transition in time — `bisect` on `#promo-strip` existing finds a real edge — rather
+ * than a page that was simply born broken, which no amount of searching the timeline would reveal.
+ */
+export const PROMO_DELAY_MS = 4000
+
+/**
+ * The error the form shows when submission is blocked.
+ *
+ * Attached to `#postcode`, which is not the field at fault, in every scenario. This is the whole
+ * point of the demo and not an oversight: the investigation is not "submit is disabled", it is "the
+ * reason submit is disabled is not where the UI says it is".
+ */
+export const MISLEADING_POSTCODE_ERROR = 'We could not verify this postcode for your region.'

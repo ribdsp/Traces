@@ -6,3 +6,17 @@
  * bugbait should look like an unremarkable shop. Nothing clever here on purpose: the recording is the
  * product, and a distinctive interface would draw attention away from the bug being demonstrated.
  */
+
+/* Promo strip over the payment button. See app/checkout/page.tsx. */
+.promo-strip {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(254 243 199);
+  font-size: 0.75rem;
+  color: rgb(120 53 15);
+  opacity: 0.03;
+}
