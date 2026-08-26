@@ -21,7 +21,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="h-screen overflow-hidden bg-zinc-950 text-zinc-200 antialiased">
+      {/*
+        A flex column rather than a plain block: the tool status banner is one line when the surface is
+        healthy and several when it has to explain a missing origin trial, and `page.tsx` should take
+        whatever height is left rather than subtracting a number that was only ever true for one of
+        those states.
+      */}
+      <body className="flex h-screen flex-col overflow-hidden bg-zinc-950 text-zinc-200 antialiased">
         <ToolSurface />
         {children}
       </body>

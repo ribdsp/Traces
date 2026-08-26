@@ -22,8 +22,23 @@ export function Timeline() {
   const markers = useSessionStore((s) => s.markers)
   const currentTime = useSessionStore((s) => s.currentTime)
 
+  /**
+   * The empty state is a sentence rather than a blank bar. A 96px grey strip under the player reads as
+   * a timeline that failed to draw, and the one thing worth saying here is what this axis is *for* —
+   * it is the collaboration claim, and it is legible before any data arrives.
+   */
   if (!recording) {
-    return <div className="h-24 border-t border-zinc-800" />
+    return (
+      <div className="flex h-24 shrink-0 items-center justify-center border-t border-zinc-800 px-6">
+        <p className="text-center text-[11px] text-zinc-600">
+          The shared timeline appears here once a recording is loaded.
+          <span className="mt-0.5 block text-zinc-700">
+            Everything you mark and everything the agent finds lands on this one axis, labelled by who
+            found it.
+          </span>
+        </p>
+      </div>
+    )
   }
 
   const positionOf = (atMs: number) => `${(atMs / recording.durationMs) * 100}%`
@@ -38,7 +53,7 @@ export function Timeline() {
    *     timeline is the single most common thing anyone does with this app
    */
   return (
-    <div className="relative h-24 select-none border-t border-zinc-800 bg-zinc-950">
+    <div className="relative h-24 shrink-0 select-none border-t border-zinc-800 bg-zinc-950">
       <EventTrack />
       <BisectTrace />
 
