@@ -11,8 +11,8 @@ import type { Recording } from '@/types/domain'
  * one fact — spike S2 on Day 1 exists to prove it before anyone writes a tool.
  *
  * If it turns out not to hold, the fallback is rebuilding snapshots with `rrweb-snapshot` outside a
- * Replayer (R5 in internal/PLAN.md). Keeping every rrweb call behind this interface is what makes
- * that fallback a one-file change instead of a rewrite.
+ * Replayer. Keeping every rrweb call behind this interface is what makes that fallback a one-file
+ * change instead of a rewrite.
  */
 export type ReplayEngine = {
   /** Replay to a recording-relative time and settle. Resolves once the DOM reflects that moment. */

@@ -16,8 +16,8 @@ import type { Gate, GateResult } from '@/types/domain'
  * if they aren't. The agent then retries with the ticket, which reads to the model as a normal
  * polling loop rather than a broken page.
  *
- * Spike S1 on Day 1 measures the real tolerance; write the number into internal/PLAN.md and set
- * GATE_TIMEOUT_MS to comfortably under it.
+ * Measure the real tolerance of the agents you target before trusting this number, and set
+ * GATE_TIMEOUT_MS comfortably under whatever you measure.
  */
 
 /**

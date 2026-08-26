@@ -22,7 +22,7 @@ dist/
 coverage/
 .nyc_output/
 
-# internal team documents (Indonesian, not part of the public project)
+# local notes, not part of the published project
 internal/
 
 # session recordings

@@ -10,29 +10,25 @@ before your first edit, then `CONTRIBUTING.md`.
 3. **`docs/tools.md`** — the 16-tool contract
 4. **`docs/agent-legible-dom.md`** — only if you touch `lib/dom`
 
-## Stay inside the folders you own
+## One area per change
 
-This started as a three-person project split **by folder**, not by feature, so that concurrent work
-never lands on the same lines:
+The codebase is split **by folder, not by feature**, so that concurrent work rarely lands on the same
+lines. Two consequences:
 
-| Area | Owner |
-|---|---|
-| `traces/src/lib/replay` `lib/dom` `lib/bisect` `lib/report` `src/types/domain.ts` | Riko |
-| `traces/src/components` `src/app/page.tsx` `src/app/layout.tsx` `globals.css` `tailwind.config.ts` | Faiq |
-| `traces/src/lib/webmcp` `src/lib/store` `src/app/tool-surface.tsx` `bugbait/` | Vicko |
+- **Keep a change inside the area you were asked to work on.** If the fix you need lives elsewhere,
+  **say so in your final message instead of making it.** A patch that helpfully repairs a neighbouring
+  module hands its maintainer a conflict to resolve blind, in code they didn't write.
+- **`src/types/domain.ts` is a frozen contract.** Every other module depends on it, which makes adding
+  a type there a conversation rather than a commit.
 
-If the change you need lives in someone else's folder, **say so in your final message instead of
-making it.** An agent that helpfully fixes a neighbouring folder hands its owner a merge conflict they
-have to resolve blind, in code they didn't write.
-
-`src/types/domain.ts` is the frozen contract all three depend on. Adding a type there is a
-conversation, not a commit.
+Who holds which area isn't listed here on purpose: it changes, and a stale ownership table is worse
+than none. Whoever asked you to make this change will tell you your scope.
 
 ## `TODO(name), Day n:` markers are assignments
 
-Every stub in this repository names its owner and the day it is due. Implement the ones addressed to
-you. Leaving someone else's stub alone is correct behaviour, not incompleteness — and deleting the
-marker while implementing around it destroys the only record of who owes what.
+Every stub names the person who owned it and the day it was due during the original build. Implement
+the ones you were asked to implement; leaving the rest alone is correct behaviour, not incompleteness.
+Deleting a marker while implementing around it destroys the only record of who owes what.
 
 ## Some tests are red on purpose
 
@@ -42,12 +38,6 @@ that converts a specification into a lie, silently.
 
 `no-eval.test.ts` greps the source and fails if `eval(` or `new Function` appears anywhere. It is a
 security boundary, not a lint rule.
-
-## `internal/` is gitignored deliberately
-
-It holds Indonesian planning documents for the original team. Don't add it to git, don't translate it
-into the public docs, and don't quote it in public files. If it isn't in your clone, that's expected —
-ask the person who gave you the repository.
 
 ## Verify instead of asserting
 
