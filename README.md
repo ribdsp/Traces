@@ -234,8 +234,12 @@ truncated at 60 characters. Tailwind class soup discarded entirely. A hard budge
 1,200 characters**, enforced by a test rather than by good intentions — a budget maintained by
 discipline erodes in a week.
 
-Compression on the primary sample: <!-- TODO: measured --> characters of raw `outerHTML` down to
-<!-- TODO: measured --> characters. Same recording, same timestamp, measurement script in the repo.
+Compression on the primary sample: **2,026** characters of raw `outerHTML` down to **663** characters
+— `form#checkout` in `empty-province` at 38,048 ms, 25 elements rendered as 17 lines, **3.06×**. Same
+recording, same timestamp, measurement script in the repo
+(`traces/scripts/measure-compression.mjs`; the other two samples measure 2.68× and 2.57×). The ratio
+is modest because this demo page is deliberately lean markup — it is a property of the page, not of
+the algorithm, and the response side is what the 1,200-character budget caps.
 
 Notice what the compressed form gives an agent that a screenshot never could: it can read
 `aria-invalid`, count `option` elements that were never rendered, and distinguish a genuinely disabled
