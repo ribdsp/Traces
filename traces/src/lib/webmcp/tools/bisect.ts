@@ -1,6 +1,8 @@
-import { PREDICATE_KINDS } from '@/lib/bisect/predicate'
-import { DEFAULT_PRECISION_MS } from '@/lib/bisect/bisect'
-import { type ToolDefinition, notImplemented } from '../tool-types'
+import { PREDICATE_KINDS, evaluatePredicate, validatePredicate, validateSelector } from '@/lib/bisect/predicate'
+import { DEFAULT_PRECISION_MS, type BisectProbe, bisect } from '@/lib/bisect/bisect'
+import { sessionActions } from '@/lib/store/session'
+import { type ToolDefinition, json, requireNumber, toolError } from '../tool-types'
+import { currentEngine, currentRecording, restorePlayhead } from './tool-context'
 
 /**
  * `bisect` — binary-search the replay timeline for the first moment a predicate holds.
@@ -75,17 +77,117 @@ export const bisectTool: ToolDefinition = {
   },
 
   /**
-   * TODO(vicko), Day 3:
-   *   - validateSelector and validatePredicate first, returning their messages verbatim as tool
-   *     errors — they are written for a model to act on
-   *   - clamp `from`/`to` to the recording, rejecting an inverted window with a readable error
-   *   - build the probe: gotoTime via the replay engine, querySelector in the mirror document,
-   *     evaluatePredicate; report `elementMissing` when nothing matched
-   *   - push the trace into the store so BisectTrace animates it
-   *   - return the whole BisectResult, including `alreadyTrueAtStart` and `elapsedMs`. The elapsed
-   *     time is a claim in the submission, so it has to be measured rather than described
+   * Implemented — vicko, Day 3. What the wrapper is responsible for, in order:
+   *
+   *   - `validateSelector` and `validatePredicate` first, their messages returned verbatim: they are
+   *     already written for a model to act on, and rephrasing them here would produce two vocabularies
+   *     for one rejection.
+   *   - `from`/`to` clamped into the recording, an inverted window rejected. Clamping rather than
+   *     rejecting an over-long `to` is deliberate — "search to the end" is what `to: 999999` means, and
+   *     the clamp is reported in the response so the agent sees the window that was actually searched.
+   *   - the probe: seek, `querySelector` in the *mirror* document, `evaluatePredicate`. A selector that
+   *     matches nothing at that instant reports `elementMissing`, which is a different finding from
+   *     `false` (docs/tools.md#4).
+   *   - the trace goes into the store, so `BisectTrace` animates the six jumps a human then watches.
+   *   - `elapsedMs` comes back measured by `lib/bisect`, not described here. It is a claim in the
+   *     submission, so it has to be a measurement.
    */
-  async execute() {
-    return notImplemented('bisect')
+  async execute(args) {
+    // The whole argument surface is validated before the engine is required. A predicate the validator
+    // rejects is the agent's to fix; "the player has not mounted" tells it to retry, and answering a
+    // malformed predicate with "retry" gets the same predicate back on the next call.
+    const recording = currentRecording()
+    if (!recording.ok) return recording.response
+
+    const selector = validateSelector(args.selector)
+    if (!selector.ok) return toolError(selector.error)
+
+    const predicate = validatePredicate(args.predicate)
+    if (!predicate.ok) return toolError(predicate.error)
+
+    const fromArg = requireNumber(args, 'from')
+    if (!fromArg.ok) return toolError(fromArg.error)
+    const toArg = requireNumber(args, 'to')
+    if (!toArg.ok) return toolError(toArg.error)
+
+    const clamp = (value: number): number => Math.min(Math.max(value, 0), recording.value.durationMs)
+    const from = clamp(fromArg.value)
+    const to = clamp(toArg.value)
+
+    if (from > to) {
+      return toolError(
+        `'from' (${fromArg.value} ms) is after 'to' (${toArg.value} ms), so there is no window to search. ` +
+          `Pass from <= to; this recording runs from 0 to ${recording.value.durationMs} ms.`,
+      )
+    }
+
+    const precisionArg = args.precisionMs
+    if (precisionArg !== undefined && precisionArg !== null) {
+      if (typeof precisionArg !== 'number' || !Number.isFinite(precisionArg) || precisionArg <= 0) {
+        return toolError(
+          `'precisionMs' must be a positive number of milliseconds, or omitted for the default of ${DEFAULT_PRECISION_MS}.`,
+        )
+      }
+    }
+    const precisionMs = typeof precisionArg === 'number' ? precisionArg : DEFAULT_PRECISION_MS
+
+    const engine = currentEngine()
+    if (!engine.ok) return engine.response
+
+    /**
+     * One probe. `elementMissing` is set separately from `result` on purpose: "the button is not
+     * disabled" and "the button does not exist yet" are different findings, and an agent handed only
+     * `false` for both reports a state change that was really an element appearing.
+     */
+    const probe: BisectProbe = async (atMs) => {
+      await engine.value.gotoTime(atMs)
+      const element = engine.value.mirrorDocument().querySelector(selector.value)
+      if (element === null) return { result: false, elementMissing: true }
+      return { result: evaluatePredicate(predicate.value, element), elementMissing: false }
+    }
+
+    let result
+    try {
+      result = await bisect({ from, to, precisionMs, probe })
+    } catch (error) {
+      // `evaluatePredicate` throws for a predicate that cannot apply to the element it found — asking
+      // `optionCount` of a `<div>`, for instance — and the mirror document throws while the player is
+      // still starting up. Both are the agent's next move, not a crash.
+      const detail = error instanceof Error ? error.message : String(error)
+      return toolError(`The search stopped at a probe: ${detail}`)
+    }
+
+    // The human watches the playhead jump through these; without this the search would be invisible.
+    sessionActions().setBisectTrace(result.trace)
+    await restorePlayhead(engine.value)
+
+    const clamped = from !== fromArg.value || to !== toArg.value
+
+    return json({
+      ...result,
+      searchedFromMs: from,
+      searchedToMs: to,
+      ...(clamped
+        ? {
+            note:
+              `The window was clamped to the recording: searched ${from}–${to} ms of a ${recording.value.durationMs} ms ` +
+              'recording. Call read_session_meta for the duration if that is not what you meant.',
+          }
+        : {}),
+      ...(result.firstTrue === null
+        ? {
+            note:
+              `The condition never held between ${from} and ${to} ms. That is an answer, not a failure: widen the ` +
+              'window, or check with read_dom_at at one timestamp that you are describing the state you think you are.',
+          }
+        : {}),
+      ...(result.alreadyTrueAtStart
+        ? {
+            note:
+              `The condition already held at ${from} ms, so firstTrue is the floor of your window rather than the ` +
+              'moment it changed. Search earlier — from: 0 — to find the actual transition.',
+          }
+        : {}),
+    })
   },
 }
