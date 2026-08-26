@@ -115,12 +115,32 @@ Two different problems, two different mechanisms, neither pretending to be the o
 ## Measuring it
 
 The compression ratio is a headline claim, so it is measured rather than asserted. At the critical
-instant of the primary sample recording:
+instant of the `empty-province` recording — the moment the required dropdown is empty, `aria-invalid`
+is set and the error text has appeared:
 
 | | Characters |
 |---|---|
-| Raw `outerHTML` of the scope | <!-- measured, fill in --> |
-| `read_dom_at` response | <!-- measured, fill in --> |
+| Raw `outerHTML` of the scope | 11,350 |
+| `read_dom_at` response | 1,154 |
 
-Both numbers come from the same recording at the same timestamp, and the measurement script lives in
-the repo so anyone can reproduce them.
+**9.84×**, and 140 elements rendered as 20 lines. Repeated at four other instants of the same
+recording the ratio held between 9.5× and 10.0×, and the response stayed inside both budgets every
+time (1,154–1,191 characters, 20–21 lines). `compressDom` itself cost 2.1–7.6 ms.
+
+Two things to be careful about when quoting these numbers:
+
+- **The ratio is a property of the page, not of the algorithm.** The output side is capped at 1,200
+  characters, so a heavier page produces a bigger ratio for free. A ~9.8× measurement on a page with
+  140 elements is the honest reading; extrapolating it to "hundreds of thousands of characters
+  become nine hundred" is not, because no page that size has been measured here.
+- **They were taken in a browser, against a real rrweb replay** — the DOM that comes back out of the
+  replay iframe, not a test fixture. That distinction turned out to matter by a factor of four: the
+  same function measured against hand-written jsdom fixtures reported 2.2×, because a fixture has
+  none of the wrapper depth a real page carries. jsdom also implements no layout, so nothing about
+  visibility can be measured there at all.
+
+The measurement is not yet reproducible from a checked-in script, because it needs a browser, a real
+Replayer and a recording to replay: it was taken from a harness outside the repo, driving a page
+whose markup mirrors the demo app's checkout. Once the sample recordings land, this becomes a page
+in the app rather than an external harness — the numbers above should be re-taken against the real
+`empty-province` sample at that point, and they will move, because the page will not be identical.
