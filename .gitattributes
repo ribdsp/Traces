@@ -1,0 +1,7 @@
+# Line endings are normalised to LF in the repository, whatever the machine does
+# locally. Three people on three machines otherwise produce whole-file diffs that
+# bury the real change and turn every merge into a conflict.
+* text=auto eol=lf
+
+# Recordings are generated, not authored. Diffing them is never useful.
+*.session.json -diff linguist-generated

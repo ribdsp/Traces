@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Owner: Faiq.
+ *
+ * Deliberately almost empty. The visual direction is Faiq's to make on Day 6, and a scaffold that
+ * pre-picks a font stack and a palette makes that decision by default rather than on purpose. What is
+ * here is only what the replay mechanism needs, plus the two globals that would otherwise be
+ * rediscovered at 2am.
+ *
+ * One thing worth deciding early rather than late: this is an operations tool, so it wants density and
+ * quiet — small type, tight rows, one accent that means something. Two accents are already in use and
+ * they carry meaning, not decoration: one for the human, one for the agent, applied in AuthorBadge.
+ */
+
+:root {
+  color-scheme: dark;
+}
+
+/*
+ * The Replayer builds its own iframe and sizes it from this element, so the mount must have real
+ * dimensions before construction. A zero-height parent yields a player that exists, reports no error,
+ * and shows nothing — an hour of debugging that this rule prevents.
+ */
+.traces-replay-mount {
+  width: 100%;
+  height: 100%;
+}
+
+.traces-replay-mount iframe {
+  border: 0;
+  background: white;
+}
+
+/*
+ * The replay is evidence, not UI. It must never inherit Traces's own styling, or a bug that depends on
+ * how the recorded page looked stops being reproducible.
+ */
+.traces-replay-mount * {
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

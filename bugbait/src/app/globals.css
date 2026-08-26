@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * bugbait should look like an unremarkable shop. Nothing clever here on purpose: the recording is the
+ * product, and a distinctive interface would draw attention away from the bug being demonstrated.
+ */
