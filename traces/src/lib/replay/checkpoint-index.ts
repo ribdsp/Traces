@@ -13,10 +13,13 @@ const FULL_SNAPSHOT = 2
  * fraction of replaying from zero. A bisect does ~6 probes, so the difference between "from the
  * nearest checkpoint" and "from the start" is the difference between about a second and about ten.
  *
- * TODO(riko), Day 2: return relative-ms positions of every type-2 event, ascending.
+ * Returns the relative-ms position of every full snapshot, ascending.
  */
-export function buildCheckpointIndex(_events: RrwebEvent[], _startedAt: number): number[] {
-  throw new Error('buildCheckpointIndex: not implemented')
+export function buildCheckpointIndex(events: RrwebEvent[], startedAt: number): number[] {
+  return events
+    .filter((event) => event.type === FULL_SNAPSHOT)
+    .map((event) => event.timestamp - startedAt)
+    .sort((a, b) => a - b)
 }
 
 /**
