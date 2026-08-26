@@ -26,10 +26,27 @@ import type { Gate, GateResult } from '@/types/domain'
  */
 export const GATE_TIMEOUT_MS = 25_000
 
+/** One tool call currently awaiting this question. An agent that polls produces several over time. */
+type Waiter<T> = {
+  settle: (result: GateResult<T>) => void
+  timer: ReturnType<typeof setTimeout>
+}
+
 type PendingEntry<T> = {
-  resolve: (value: T) => void
-  /** Kept so a retry can wait on the same promise instead of opening a second question. */
-  promise: Promise<GateResult<T>>
+  /**
+   * Everyone awaiting this question *right now* — usually one, but a retry adds another, and a host
+   * that reissues a call can add more. All of them get the same answer.
+   */
+  waiters: Waiter<T>[]
+  /**
+   * Set the instant the human acts, and deliberately kept even when nobody is listening.
+   *
+   * This is the part that makes the ticket contract real. The human frequently answers *between* two
+   * polls: the first call has already returned `pending`, the retry hasn't arrived yet, and there is
+   * no promise to resolve at that moment. Without somewhere to park the answer it is dropped, the
+   * agent polls forever, and the UI shows a question the human already answered.
+   */
+  answer?: { value: T }
   createdAt: number
 }
 
@@ -41,43 +58,52 @@ function newTicket(prefix: string): string {
 }
 
 /**
- * Create a gate that resolves either way.
+ * Attach one waiter to an existing question, and resolve either way.
  *
- * Resolves once and only once: whichever of the human and the timeout arrives first wins, the timer
- * is cleared, and a late `resolve()` is a no-op rather than a second reply to a model that has
- * already moved on.
+ * Shared by the first call and every retry, so both paths wait on the *same* question. Returns null
+ * only when the ticket is unknown — the caller turns that into a readable tool error rather than a
+ * silent hang.
+ */
+function wait<T>(ticket: string, timeoutMs: number): Promise<GateResult<T>> | null {
+  const entry = pending.get(ticket) as PendingEntry<T> | undefined
+  if (!entry) return null
+
+  // The human answered while nobody was listening. Collect it and retire the ticket.
+  if (entry.answer) {
+    const { value } = entry.answer
+    pending.delete(ticket)
+    return Promise.resolve({ status: 'answered', value })
+  }
+
+  return new Promise<GateResult<T>>((resolve) => {
+    const waiter: Waiter<T> = {
+      settle: resolve,
+      timer: setTimeout(() => {
+        entry.waiters = entry.waiters.filter((candidate) => candidate !== waiter)
+        // The question stays open; only this particular call gives up on it.
+        resolve({ status: 'pending', ticket })
+      }, timeoutMs),
+    }
+    entry.waiters.push(waiter)
+  })
+}
+
+/**
+ * Open a question and wait for a person.
+ *
+ * Resolves either way: with the answer if the human is quick, with `{ status: 'pending', ticket }` if
+ * they aren't. The question itself outlives that timeout — the ticket is how the agent gets back to
+ * it, and `answerGate` can still land on it long afterwards.
  */
 export function createGate<T>(ticketPrefix: string, timeoutMs = GATE_TIMEOUT_MS): Gate<T> & { ticket: string } {
   const ticket = newTicket(ticketPrefix)
+  const entry: PendingEntry<T> = { waiters: [], createdAt: Date.now() }
+  pending.set(ticket, entry as PendingEntry<unknown>)
 
-  let settle: ((result: GateResult<T>) => void) | null = null
-  let timer: ReturnType<typeof setTimeout> | null = null
+  // Non-null: the entry was just inserted, so `wait` cannot miss it.
+  const promise = wait<T>(ticket, timeoutMs) as Promise<GateResult<T>>
 
-  const promise = new Promise<GateResult<T>>((resolve) => {
-    settle = resolve
-    timer = setTimeout(() => {
-      if (!settle) return
-      settle = null
-      resolve({ status: 'pending', ticket })
-    }, timeoutMs)
-  })
-
-  const resolveWith = (value: T) => {
-    if (!settle) return
-    if (timer !== null) clearTimeout(timer)
-    const done = settle
-    settle = null
-    pending.delete(ticket)
-    done({ status: 'answered', value })
-  }
-
-  pending.set(ticket, {
-    resolve: resolveWith as (value: unknown) => void,
-    promise: promise as Promise<GateResult<unknown>>,
-    createdAt: Date.now(),
-  })
-
-  return { ticket, promise, resolve: resolveWith }
+  return { ticket, promise, resolve: (value: T) => void answerGate(ticket, value) }
 }
 
 /**
@@ -86,23 +112,38 @@ export function createGate<T>(ticketPrefix: string, timeoutMs = GATE_TIMEOUT_MS)
  * Called from UI code — the mark-point overlay, the hypothesis cards, the report draft. Returns false
  * when the ticket is unknown, which happens legitimately: the human may answer a question the agent
  * has already abandoned.
+ *
+ * A second call on the same ticket is ignored rather than delivered. Two clicks on one prompt is a
+ * human being unsure, not two answers, and the agent has already been told the first one.
  */
 export function answerGate<T>(ticket: string, value: T): boolean {
-  const entry = pending.get(ticket)
-  if (!entry) return false
-  entry.resolve(value)
+  const entry = pending.get(ticket) as PendingEntry<T> | undefined
+  if (!entry || entry.answer) return false
+
+  entry.answer = { value }
+  const waiting = entry.waiters
+  entry.waiters = []
+
+  // Nobody listening: the answer stays parked on the entry until the agent polls with its ticket.
+  if (waiting.length === 0) return true
+
+  pending.delete(ticket)
+  for (const waiter of waiting) {
+    clearTimeout(waiter.timer)
+    waiter.settle({ status: 'answered', value })
+  }
   return true
 }
 
 /**
  * Wait again on an existing ticket, for the retry path.
  *
- * TODO(vicko), Day 4: a retry has to attach to the *same* question. Opening a new gate on retry is
- * the subtle bug here — the human answers the first prompt, the agent is waiting on the second, and
- * both sides sit there each believing the other is slow.
+ * A retry attaches to the *same* question. Opening a new gate here is the subtle bug this exists to
+ * avoid — the human answers the first prompt, the agent waits on the second, and both sides sit there
+ * each believing the other is slow.
  */
-export function retryGate<T>(_ticket: string, _timeoutMs = GATE_TIMEOUT_MS): Promise<GateResult<T>> | null {
-  throw new Error('retryGate: not implemented')
+export function retryGate<T>(ticket: string, timeoutMs = GATE_TIMEOUT_MS): Promise<GateResult<T>> | null {
+  return wait<T>(ticket, timeoutMs)
 }
 
 /** Tickets still waiting. Useful in the inspector; also what the UI badge counts. */

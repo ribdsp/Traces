@@ -1,4 +1,5 @@
-import { allTools } from './tools'
+import { allTools, assertUniqueToolNames } from './tools'
+import { installWebMcpPolyfill, polyfillRegistry } from './polyfill'
 
 /**
  * The one place every tool is registered.
@@ -22,22 +23,71 @@ export type RegistrationResult = {
 }
 
 /**
- * TODO(vicko), Day 3:
- *   - install the polyfill first, then read `document.modelContext`
- *   - if it is still absent, return `unavailable` with an empty list and let the UI say so plainly —
- *     a banner naming the missing origin trial beats a page that looks fine and does nothing
- *   - register every entry in `allTools` with `{ signal: controller.signal }`
- *   - keep tools registered when no recording is loaded. They reply with a readable error instead;
- *     a tool that vanishes when idle makes the agent believe the capability doesn't exist
+ * Register the whole surface, and say plainly which mode we ended up in.
+ *
+ * The polyfill is a development convenience, not a production fallback: shipping a shim to a browser
+ * without the origin trial would report `polyfill` to a visitor whose agent still cannot see a single
+ * tool, which is a more confusing lie than `unavailable`. So in production the answer is either the
+ * real implementation or an honest banner.
  */
 export function registerTools(): RegistrationResult {
-  throw new Error('registerTools: not implemented')
+  // Next.js renders this tree on the server too, where there is no document to register against.
+  if (typeof document === 'undefined') return { mode: 'unavailable', registered: [] }
+
+  // Fails fast on a copy-pasted name, which would otherwise shadow a tool silently at demo time.
+  assertUniqueToolNames()
+
+  const useShim = process.env.NODE_ENV !== 'production'
+  const mode = document.modelContext || useShim ? installWebMcpPolyfill() : 'unavailable'
+
+  const modelContext = document.modelContext
+  if (!modelContext) return { mode: 'unavailable', registered: [] }
+
+  /*
+   * Abort any previous surface before opening a new one. React 19 mounts effects twice in
+   * development, and hot reload re-runs this module — both leave a second set of tools registered
+   * whose closures point at a Replayer that no longer exists. One controller owns everything, so
+   * cleanup is one line and cannot half-happen.
+   */
+  controller?.abort()
+  controller = new AbortController()
+
+  const registered: string[] = []
+  for (const tool of allTools) {
+    try {
+      modelContext.registerTool(
+        {
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema as unknown as Record<string, unknown>,
+          execute: tool.execute,
+        },
+        { signal: controller.signal },
+      )
+      registered.push(tool.name)
+
+      // Keeps `window.tracesTools` useful in native mode, where the shim's registry never fills.
+      polyfillRegistry.set(tool.name, tool)
+    } catch (error: unknown) {
+      /*
+       * One host rejecting one schema must not cost us the other fifteen tools. Reported rather than
+       * rethrown, because a surface that is fifteen-sixteenths present is worth having and the banner
+       * still shows what registered.
+       */
+      const message = error instanceof Error ? error.message : String(error)
+      // eslint-disable-next-line no-console -- a rejected registration is invisible otherwise
+      console.warn(`[traces] host rejected tool '${tool.name}': ${message}`)
+    }
+  }
+
+  return { mode, registered }
 }
 
 /** Deregisters everything. Idempotent. */
 export function unregisterTools(): void {
   controller?.abort()
   controller = null
+  polyfillRegistry.clear()
 }
 
 /**

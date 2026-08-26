@@ -30,16 +30,64 @@ declare global {
 }
 
 /**
- * TODO(vicko), Day 1:
- *   - if `document.modelContext` exists, install nothing and return 'native' — never shadow the real
- *     implementation, or you will spend an afternoon debugging the polyfill's behaviour on a browser
- *     that had the real thing all along
- *   - otherwise define `document.modelContext` with `registerTool`, honouring `options.signal` by
- *     removing the tool on abort, and dispatching a `toolchange` event on every add and remove
- *   - always install `window.tracesTools`, native or not: the console handle is useful either way
+ * Install the shim, unless the browser already has the real thing.
+ *
+ * Assumes `document` exists — the only caller is `registerTools`, which checks that first, because
+ * this runs from a client effect and Next.js renders the tree on the server too.
  */
 export function installWebMcpPolyfill(): 'native' | 'polyfill' {
-  throw new Error('installWebMcpPolyfill: not implemented')
+  // Useful in both modes, so it goes in before the branch.
+  installConsoleHandle()
+
+  /*
+   * Never shadow a working implementation. Installing over a live origin trial means every bug you
+   * then chase is a bug in this file, on a browser that had the genuine article the whole time — and
+   * nothing about the symptoms tells you which of the two you are looking at.
+   */
+  if (document.modelContext) return 'native'
+
+  const shim: ModelContext = Object.assign(new EventTarget(), {
+    registerTool(descriptor: ModelContextToolDescriptor, options?: ModelContextRegisterOptions): void {
+      /*
+       * The spec's descriptor type is wider than what we register: `inputSchema` is an opaque
+       * `Record<string, unknown>` there and a checked `ToolInputSchema` in ours. Every caller is
+       * register-tools.ts passing one of our own `allTools` entries, so narrowing here is a statement
+       * about this codebase rather than about the spec.
+       */
+      polyfillRegistry.set(descriptor.name, descriptor as unknown as ToolDefinition)
+      shim.dispatchEvent(new Event('toolchange'))
+
+      options?.signal?.addEventListener('abort', () => {
+        polyfillRegistry.delete(descriptor.name)
+        shim.dispatchEvent(new Event('toolchange'))
+      })
+    },
+  })
+
+  document.modelContext = shim
+  return 'polyfill'
+}
+
+/**
+ * The devtools console handle.
+ *
+ * Installed in every mode, because this is how most of this project will actually get debugged — long
+ * before any agent is connected, and without waiting for the inspector extension.
+ */
+function installConsoleHandle(): void {
+  window.tracesTools = {
+    list: () =>
+      [...polyfillRegistry.values()].map((tool) => ({ name: tool.name, description: tool.description })),
+
+    call: async (name, args = {}) => {
+      const tool = polyfillRegistry.get(name)
+      if (!tool) {
+        const known = [...polyfillRegistry.keys()].join(', ') || 'none registered yet'
+        throw new Error(`No tool named '${name}'. Registered: ${known}.`)
+      }
+      return tool.execute(args)
+    },
+  }
 }
 
 /** Registry backing the polyfill. Exported so the console handle and the shim share one source. */
