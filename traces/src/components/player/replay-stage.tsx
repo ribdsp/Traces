@@ -4,6 +4,7 @@ import 'rrweb/dist/style.css'
 
 import { useEffect, useRef, useState } from 'react'
 import { MarkPointOverlay } from '@/components/player/mark-point-overlay'
+import { usePlayheadSync } from '@/components/player/use-playhead'
 import { SAMPLE_RECORDINGS } from '@/components/ui/sample-recordings'
 import { createReplayEngine, setActiveEngine } from '@/lib/replay/replay-engine'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
@@ -47,6 +48,14 @@ export function ReplayStage() {
 
   const [available, setAvailable] = useState<{ width: number; height: number } | null>(null)
   const [engineError, setEngineError] = useState<string | null>(null)
+
+  /**
+   * The other half of "who moves the playhead", and it lives here because this is where the engine
+   * lives. The store's `setCurrentTime` moves the line the timeline draws and nothing else; this is what
+   * makes the frame behind it follow. Mounted once, next to the engine's own lifecycle, so there is
+   * exactly one thing seeking the Replayer on the human's behalf.
+   */
+  usePlayheadSync()
 
   /** Content box, so the frame's own padding is already subtracted. */
   useEffect(() => {
