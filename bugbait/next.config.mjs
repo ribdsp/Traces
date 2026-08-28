@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 /**
  * bugbait — the app whose bugs become the recordings Traces investigates.
  *
@@ -8,6 +10,10 @@
  */
 const nextConfig = {
   reactStrictMode: true,
+
+  // Same reason as in traces/next.config.mjs: this folder installs on its own, so the tracing root is
+  // this folder, not whatever ancestor happens to contain a lockfile.
+  outputFileTracingRoot: fileURLToPath(new URL('.', import.meta.url)),
 }
 
 export default nextConfig

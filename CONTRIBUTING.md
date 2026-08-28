@@ -28,6 +28,20 @@ order of fidelity:
 You don't need a real agent for most work. You do need one before claiming a tool works — see
 [Testing a tool](#testing-a-tool).
 
+`traces/` and `bugbait/` install separately — neither is a workspace member, and there is no lockfile at
+the repo root. `npm ci` works in both, and `npm audit` reports zero vulnerabilities in both; if either
+stops being true, that's a change to fix rather than to note. Two entries in those manifests exist for
+reasons JSON has no room to state:
+
+- **`overrides: { "postcss": "^8.5.26" }`** in both. The advisory is against a copy of postcss nested
+  under `next`, not the one either app depends on directly, so bumping the direct dependency does
+  nothing. The alternative `npm audit fix --force` offers is a Next major, which is a much larger change
+  than the one-line fix the advisory actually needs.
+- **`vitest` on 4.x**, not the 2.x this was built against. Two advisories, one of them critical, are
+  fixed only in 4.x. The suite needed no changes — but the config had to become `vitest.config.mts`,
+  since `.ts` in a package without `"type": "module"` is loaded as CommonJS and Vite's native config
+  loader is about to stop tolerating that.
+
 ---
 
 ## Three rules that aren't negotiable

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 /**
  * The Origin Trial token has to arrive as an HTTP header, not a `<meta>` tag.
  *
@@ -21,6 +23,15 @@
  */
 const nextConfig = {
   reactStrictMode: true,
+
+  /*
+   * This app is its own root: `traces/` and `bugbait/` install separately and neither is a workspace
+   * member. Without this, Next infers the tracing root by walking up until it stops finding lockfiles,
+   * so a stray `package-lock.json` anywhere above the checkout — a home directory is the usual culprit
+   * — silently moves the root there and the build traces a tree it has no business reading. Pinning it
+   * makes the build depend only on what is inside this folder.
+   */
+  outputFileTracingRoot: fileURLToPath(new URL('.', import.meta.url)),
 
   async headers() {
     const token = process.env.NEXT_PUBLIC_WEBMCP_ORIGIN_TRIAL_TOKEN
