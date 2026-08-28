@@ -11,6 +11,12 @@
  * `.env.local` (see `.env.example`). With no token set, no header is sent and the polyfill in
  * `src/lib/webmcp/polyfill.ts` takes over.
  *
+ * **Do not add `output: 'export'`.** Every page here is prerendered anyway — `next build` reports `/` as
+ * `○ (Static)` — so a static export looks like a free simplification, and it is the one change that
+ * breaks WebMCP without breaking the build: `headers()` has no meaning when there is no server to send
+ * them, so the trial silently stops applying and the polyfill takes over on a host that could have run
+ * the real thing. Deploy this as a normal Next.js app.
+ *
  * @type {import('next').NextConfig}
  */
 const nextConfig = {

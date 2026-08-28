@@ -368,7 +368,7 @@ Full analysis, including what is deliberately **out of scope**:
 | Dependency | Licence | Why |
 |---|---|---|
 | [rrweb](https://github.com/rrweb-io/rrweb) + rrweb-player | MIT | records and replays DOM mutations; the only mature option that reconstructs a real DOM rather than pixels |
-| [Next.js](https://nextjs.org) | MIT | static export, trivial Vercel deploy, response headers for the origin trial token |
+| [Next.js](https://nextjs.org) | MIT | prerendered pages, trivial Vercel deploy, response headers for the origin trial token |
 | TypeScript | Apache-2.0 | strict mode; tool schemas and domain types stay honest |
 | [Tailwind CSS](https://tailwindcss.com) | MIT | dense instrument UI without a component library |
 | [zustand](https://github.com/pmndrs/zustand) | MIT | state readable and writable *from outside React* — see below |

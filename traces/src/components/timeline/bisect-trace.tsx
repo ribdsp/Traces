@@ -108,9 +108,9 @@ function useRevealedCount(trace: BisectStep[]): number {
 /**
  * Whether the human has asked for less motion.
  *
- * Starts false, which is what the first paint has to assume — there is no media query on the server and
- * this app is a static export. The effect corrects it before the second probe would have appeared, so the
- * worst case under reduced motion is a single dot rather than an animation.
+ * Starts false, which is what the first paint has to assume — every page here is prerendered at build
+ * time, and there is no media query to read then. The effect corrects it before the second probe would
+ * have appeared, so the worst case under reduced motion is a single dot rather than an animation.
  */
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false)

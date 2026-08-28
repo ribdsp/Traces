@@ -6,9 +6,11 @@ import type { Recording } from '@/types/domain'
  * Shared by the picker in the header and the empty state on the stage, so the names a
  * judge reads in one place are the names that load in the other.
  *
- * Why hardcoded rather than read from the directory: Traces is a static export. There is no server at
- * runtime to list `public/recordings`, and a fetch of the directory returns the host's 404 page, not a
- * listing. A three-line manifest is the honest version of that constraint.
+ * Why hardcoded rather than read from the directory: nothing in this app lists `public/recordings/` at
+ * runtime. The picker is a client component fetching static files, and a fetch of the directory returns
+ * the host's 404 page rather than a listing. Listing it would mean adding a route handler whose only
+ * purpose is to enumerate three files that ship in the repo. A three-line manifest is the honest version
+ * of that tradeoff.
  *
  * `id` is the file stem — `public/recordings/<id>.json` — matching `Recording.id` in the contract.
  */

@@ -90,8 +90,8 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
 
       <span className="ml-auto flex shrink-0 items-baseline gap-1.5 pl-1">
         {/*
-          Absolute time until the clock starts, so the first paint of a static export is not a wall-clock
-          read the server could not have made.
+          Absolute time until the clock starts, so the prerendered first paint is not a wall-clock read
+          the build could not have made.
         */}
         <span
           className="font-mono text-[10px] text-zinc-600"

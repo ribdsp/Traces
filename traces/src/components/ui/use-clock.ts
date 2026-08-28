@@ -9,9 +9,10 @@ import { useEffect, useState } from 'react'
  * ago" and "waiting 14s" go stale the moment they are painted. A shared ticker keeps that in one place and
  * makes the cost explicit: one interval per consumer, at whatever coarseness that consumer actually needs.
  *
- * Null until mounted, deliberately. This app is a static export, so a `Date.now()` read during the first
- * render is a value the server could not have produced — the hydration warning that follows is noise at
- * best and a mismatched tree at worst. Callers render an absolute label, or nothing, until the clock starts.
+ * Null until mounted, deliberately. Every page here is prerendered at build time — `next build` reports
+ * `/` as `○ (Static)` — so a `Date.now()` read during the first render is a value the prerendered HTML
+ * could not have contained; the hydration warning that follows is noise at best and a mismatched tree at
+ * worst. Callers render an absolute label, or nothing, until the clock starts.
  */
 export function useWallClock(intervalMs: number): number | null {
   const [now, setNow] = useState<number | null>(null)
