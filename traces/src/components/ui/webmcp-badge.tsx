@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronUp, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { allTools } from '@/lib/webmcp/register-tools'
+import { onToolChange } from '@/lib/webmcp/tool-change'
 import type { RegistrationResult } from '@/lib/webmcp/register-tools'
 
 /**
@@ -149,10 +150,10 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
     }
 
     read()
-    context.addEventListener('toolchange', read)
+    const unsubscribe = onToolChange(context, read)
     return () => {
       active = false
-      context.removeEventListener('toolchange', read)
+      unsubscribe()
     }
   }, [registration])
 

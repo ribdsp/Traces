@@ -79,6 +79,12 @@ interface RegisteredTool {
   annotations?: ToolAnnotations
 }
 
+/**
+ * `extends EventTarget` follows the spec, and the spec is not the whole truth here: ChatGPT Desktop's
+ * in-app browser exposes a `modelContext` without those methods, so TypeScript will let you write an
+ * `addEventListener` call that throws on the one host with native WebMCP. Subscribe through
+ * `lib/webmcp/tool-change.ts` rather than touching the event methods directly.
+ */
 interface ModelContext extends EventTarget {
   /**
    * Resolves once the tool is live, and **rejects** for every failure: `InvalidStateError` for a

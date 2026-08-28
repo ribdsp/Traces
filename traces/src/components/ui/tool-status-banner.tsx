@@ -2,6 +2,7 @@
 
 import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { onToolChange } from '@/lib/webmcp/tool-change'
 import type { RegistrationResult } from '@/lib/webmcp/register-tools'
 
 interface ToolStatusBannerProps {
@@ -71,7 +72,9 @@ export function ToolStatusBanner({ registration }: ToolStatusBannerProps) {
   /**
    * `toolchange` is how a surface that grew a tool mid-investigation shows up here without a reload —
    * the promoted-hypothesis tool from `registerDynamicTool` is the case worth demoing. The event fires
-   * on `document.modelContext`, which is why the draft has it extend `EventTarget`.
+   * on `document.modelContext`, which is why the draft has it extend `EventTarget`. Not every host
+   * honours that, and one of them is ChatGPT Desktop; `onToolChange` explains what subscribing there
+   * used to cost. When the host has no events this counter simply never moves.
    *
    * What is shown is the number of changes, not a recomputed total, and that is on purpose. `getTools()`
    * is declared and could be awaited here, but this banner's verdict has one source — the `registration`
@@ -86,10 +89,9 @@ export function ToolStatusBanner({ registration }: ToolStatusBannerProps) {
     if (!context) return
 
     setChanges(0)
-    const onToolChange = () => setChanges((n) => n + 1)
+    const bump = () => setChanges((n) => n + 1)
 
-    context.addEventListener('toolchange', onToolChange)
-    return () => context.removeEventListener('toolchange', onToolChange)
+    return onToolChange(context, bump)
   }, [registration])
 
   if (!registration) return null
