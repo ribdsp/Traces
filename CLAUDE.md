@@ -26,15 +26,19 @@ than none. Whoever asked you to make this change will tell you your scope.
 
 ## `TODO(name), Day n:` markers are assignments
 
-Every stub names the person who owned it and the day it was due during the original build. Implement
-the ones you were asked to implement; leaving the rest alone is correct behaviour, not incompleteness.
-Deleting a marker while implementing around it destroys the only record of who owes what.
+There are none left — every stub from the original build has been implemented. The convention is
+documented here because the rule outlives the markers: a marker names the person who owned the work and
+the day it was due, so **deleting one while implementing around it destroys the only record of who owes
+what.** If you add a marker, name yourself in it. If you find one, either implement it or leave it
+exactly where it is.
 
-## Some tests are red on purpose
+## The tests are green, and two suites must stay honest
 
-`compress-dom`, `bisect`, and `evaluatePredicate` ship with failing tests. They were written first, as
-specifications. **Never** make them pass by weakening an assertion, adding `.skip`, or deleting a case:
-that converts a specification into a lie, silently.
+All 285 tests pass. That is worth stating because of how some of them got there: the `compress-dom`,
+`bisect` and `evaluatePredicate` suites were written first, as specifications, and were red for as long
+as it took the implementations to satisfy them. **Never** make a test in those suites pass by weakening
+an assertion, adding `.skip`, or deleting a case: that converts a specification into a lie, silently. A
+red test there means the implementation is wrong.
 
 `no-eval.test.ts` greps the source and fails if `eval(` or `new Function` appears anywhere. It is a
 security boundary, not a lint rule.

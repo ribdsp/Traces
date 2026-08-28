@@ -26,13 +26,15 @@ const SOURCE_LOG = 11
 const MOUSE_INTERACTION_CLICK = 2
 
 /**
- * The custom-event tag a recorder is expected to use for a failed network request.
+ * The custom-event tag the recorder uses for a network request.
  *
- * rrweb has no built-in network capture, so this is this project's own convention, not something
- * rrweb defines: `record.addCustomEvent('network-request', { url, status, ok: false })`. The recorder
- * that would actually emit this — bugbait's lib/record.ts — is not implemented yet (see its Day 5
- * TODO), so treat this as the current best guess rather than a settled contract, and confirm it once
- * that recorder exists.
+ * rrweb has no built-in network capture, so this is this project's own convention, not something rrweb
+ * defines. `bugbait/src/lib/record.ts` monkey-patches `window.fetch` and emits
+ * `record.addCustomEvent('network-request', { url, method, status, ok, durationMs, bodySummary })` for
+ * every request, successful ones included — rrweb wraps that into `{ tag, payload }` under a type-5
+ * event, which is the shape `isNetworkFailureEvent` below matches. Both ends are implemented and the
+ * three committed recordings contain these events, so this is a settled contract; changing the tag or
+ * dropping `ok` from the payload silently empties `read_network`.
  */
 const NETWORK_REQUEST_CUSTOM_TAG = 'network-request'
 

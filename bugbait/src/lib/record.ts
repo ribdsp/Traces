@@ -274,8 +274,9 @@ export function currentRecorder(): RecorderHandle | null {
  *     the replayer's seek fast path scans back for the last Meta, so a recording with snapshots and no
  *     Meta events replays every probe from zero and looks like a slow bisect rather than a bad file.
  *     README.md's verification step counts both.
- *   - events stay in a plain array, unpacked and uncompressed, because `loadRecording` expects exactly
- *     that.
+ *   - events stay in a plain array, unpacked and uncompressed. `loadRecording` on the Traces side takes
+ *     the event array itself; the wrapper this file writes is unwrapped one level above it, by
+ *     `loadRecordingFile`. Packing or compressing them here would move that seam into a decoder.
  *   - `stop()` runs before `download()` can produce a file, so the tail of the session is never missing.
  */
 export function startRecording(label: string): RecorderHandle {
