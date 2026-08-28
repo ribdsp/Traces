@@ -211,6 +211,14 @@ export const proposeReportTool: ToolDefinition = {
   name: 'propose_report',
   description: "Propose a bug report and wait for the human to approve or edit it. Reproduction steps are validated against the recorded events, and any step no event supports is marked unverified rather than quietly dropped.",
 
+  /*
+   * Not read-only: it files a draft into the session store and blocks on a person. Flagged untrusted
+   * anyway, which is the non-obvious half — propose with no steps and `buildReport` synthesizes them
+   * from the event digest, so the approved payload hands back `event.summary` strings taken straight off
+   * the recorded page. The route in is the agent's own call, which is exactly why it is easy to miss.
+   */
+  annotations: { untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

@@ -25,16 +25,16 @@ import { anchorFor, percentOf } from './axis'
  *     appearing as a state change.
  *   - the funnel: after each probe, the interval that survived, folded from the trace. Successive windows
  *     are narrower and fainter, and the one that survived every probe is drawn once more in the agent's
- *     amber with its millisecond value. The store keeps only the trace, so the bracket is derived here.
+ *     own colour with its millisecond value. The store keeps only the trace, so the bracket is derived here.
  *   - the entrance is staggered in trace order, and skipped entirely under `prefers-reduced-motion`
  *   - the reveal restarts when the trace changes. `setBisectTrace` replaces the array wholesale for exactly
  *     this reason, so the effect keyed on the trace object is the intended signal.
  *   - a probe is clickable, like everything else on this axis: it seeks to the instant the agent probed, so
  *     "why did it decide that?" is one click rather than a re-run
  *
- * Amber, not the UI's sky accent, for the answer: a bisect is entirely the agent's work, and `AuthorBadge`
- * has already spent amber on the agent everywhere else. The probes themselves stay monochrome so the one
- * coloured thing in the band is the conclusion.
+ * `agent`, not `human`, for the answer: a bisect is entirely the agent's work, and that token means exactly
+ * that everywhere else in the app. The probes themselves stay monochrome so the one coloured thing in the
+ * band is the conclusion.
  */
 
 /** One probe every 80ms. Fast enough to feel like a search, slow enough to count the steps. */
@@ -167,7 +167,7 @@ export function BisectTrace() {
           <span
             key={`window-${index}`}
             aria-hidden
-            className="absolute h-px bg-zinc-500"
+            className="absolute h-px bg-muted"
             style={{
               top: ROWS_TOP_PX + index * pitch,
               left: span.left,
@@ -197,10 +197,10 @@ export function BisectTrace() {
               aria-hidden
               className={`h-1.5 w-1.5 rounded-full ${
                 missing
-                  ? 'border border-zinc-400 bg-transparent'
+                  ? 'border border-muted bg-transparent'
                   : step.result
-                    ? 'bg-zinc-100'
-                    : 'bg-zinc-700'
+                    ? 'bg-ink'
+                    : 'bg-faint'
               }`}
             />
           </button>
@@ -234,7 +234,7 @@ function ConvergedAnswer({
     return (
       <span
         title="Every probe evaluated false, so the predicate never held inside the probed range. The transition is outside it, or the predicate is wrong."
-        className="absolute right-0 font-mono text-[9px] leading-none text-zinc-500"
+        className="absolute right-0 font-mono text-[9px] leading-none text-muted"
         style={{ top: LABEL_TOP_PX }}
       >
         no transition in the probed range
@@ -250,7 +250,7 @@ function ConvergedAnswer({
       {bracket.from !== null ? (
         <span
           aria-hidden
-          className="absolute h-1 bg-amber-400/70"
+          className="absolute h-1 bg-agent/70"
           style={{
             top: DOTS_TOP_PX + 8,
             left: percentOf(bracket.from, durationMs),
@@ -268,8 +268,8 @@ function ConvergedAnswer({
         className={`absolute whitespace-nowrap font-mono text-[9px] leading-none ${anchorFor(at, durationMs)}`}
         style={{ top: LABEL_TOP_PX, left: percentOf(at, durationMs) }}
       >
-        <span className="text-amber-300">{formatSeconds(at)}</span>
-        <span className="ml-1 text-zinc-500">
+        <span className="text-agent">{formatSeconds(at)}</span>
+        <span className="ml-1 text-muted">
           {precisionMs === null ? 'already true — floor, not a change' : `±${precisionMs}ms`}
         </span>
       </span>

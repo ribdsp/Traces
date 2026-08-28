@@ -45,7 +45,10 @@ export function installWebMcpPolyfill(): 'native' | 'polyfill' {
   if (document.modelContext) return 'native'
 
   const shim: ModelContext = Object.assign(new EventTarget(), {
-    registerTool(descriptor: ModelContextToolDescriptor, options?: ModelContextRegisterOptions): void {
+    async registerTool(
+      descriptor: ModelContextToolDescriptor,
+      options?: ModelContextRegisterOptions,
+    ): Promise<void> {
       /*
        * The spec's descriptor type is wider than what we register: `inputSchema` is an opaque
        * `Record<string, unknown>` there and a checked `ToolInputSchema` in ours. Every caller is
@@ -59,6 +62,22 @@ export function installWebMcpPolyfill(): 'native' | 'polyfill' {
         polyfillRegistry.delete(descriptor.name)
         shim.dispatchEvent(new Event('toolchange'))
       })
+    },
+
+    /*
+     * Never rejects, which is exactly the shim's limitation: a real host rejects here for a duplicate
+     * name, an empty description, a malformed schema, or an agent cluster that is not origin-keyed, and
+     * none of those show up until the page runs against the origin trial. Do not read a green
+     * registration in polyfill mode as evidence the surface is sound.
+     */
+    async getTools(): Promise<RegisteredTool[]> {
+      return [...polyfillRegistry.values()].map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema as unknown as Record<string, unknown>,
+        origin: window.location.origin,
+        window,
+      }))
     },
   })
 

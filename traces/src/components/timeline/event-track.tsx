@@ -49,16 +49,16 @@ const WEIGHTS: Record<DigestEventKind, { height: string; width: string; opacity:
 
 /** Matches `AnnotationMarker`'s `TONES`. Two files, one meaning: colour is severity. */
 const FILLS: Record<Severity, string> = {
-  info: 'bg-zinc-400',
-  warn: 'bg-amber-400',
-  error: 'bg-rose-400',
+  info: 'bg-muted',
+  warn: 'bg-warn',
+  error: 'bg-error',
 }
 
 /** The text half of the same tones, for the hover card's kind. */
 const TEXTS: Record<Severity, string> = {
-  info: 'text-zinc-300',
-  warn: 'text-amber-200',
-  error: 'text-rose-200',
+  info: 'text-ink',
+  warn: 'text-warn',
+  error: 'text-error',
 }
 
 /** Painted last is painted on top. An error next to five clicks has to survive the crowd. */
@@ -139,16 +139,16 @@ export function EventTrack() {
           style={{ left: percentOf(hovered.atMs, recording.durationMs) }}
         >
           <span
-            className={`flex max-w-[24rem] items-baseline gap-1 border border-zinc-800 bg-zinc-900 px-1 py-0.5 ${anchorFor(hovered.atMs, recording.durationMs)}`}
+            className={`flex max-w-[24rem] items-baseline gap-1 border border-line bg-panel px-1 py-0.5 ${anchorFor(hovered.atMs, recording.durationMs)}`}
           >
             <span className={`shrink-0 text-[10px] ${TEXTS[severityOf(hovered.kind)]}`}>
               {hovered.kind}
             </span>
-            <span className="shrink-0 font-mono text-[9px] text-zinc-500">
+            <span className="shrink-0 font-mono text-[9px] text-muted">
               {formatSeconds(hovered.atMs)}
             </span>
             {/* Already one truncated line by contract, but a long selector in it must not widen the panel. */}
-            <span className="truncate text-[10px] text-zinc-400">{hovered.summary}</span>
+            <span className="truncate text-[10px] text-muted">{hovered.summary}</span>
           </span>
         </div>
       ) : null}

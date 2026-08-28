@@ -29,6 +29,10 @@ export const readDomAtTool: ToolDefinition = {
     'broad. It cannot tell you where things are on screen or what covers what — that is measure_layout.',
   ].join(' '),
 
+  // The single largest slab of recorded content any tool returns: form values, aria labels, error text.
+  // If prompt injection reaches an agent through Traces, it arrives here.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

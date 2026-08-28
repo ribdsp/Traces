@@ -125,6 +125,10 @@ export function ResizableSplit({
         {left}
       </section>
 
+      {/*
+        `ink` for both the drag and the focus ring rather than the `human` token: this is a UI affordance,
+        not an authored contribution, and `human`/`agent` are reserved for saying who made something.
+      */}
       <div
         role="separator"
         aria-orientation="vertical"
@@ -138,7 +142,7 @@ export function ResizableSplit({
         onPointerUp={onPointerUp}
         onKeyDown={onKeyDown}
         className={`w-[3px] shrink-0 cursor-col-resize touch-none outline-none transition-colors ${
-          dragging ? 'bg-sky-500/70' : 'bg-zinc-800 hover:bg-zinc-600 focus-visible:bg-sky-500/70'
+          dragging ? 'bg-ink' : 'bg-line hover:bg-faint focus-visible:bg-ink'
         }`}
       />
 

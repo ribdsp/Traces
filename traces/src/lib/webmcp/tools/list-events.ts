@@ -78,6 +78,10 @@ export const listEventsTool: ToolDefinition = {
     'than asking for more.',
   ].join(' '),
 
+  // Every summary is built from the recording: what the user typed, what the console logged, which URL
+  // was requested. None of it is ours.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

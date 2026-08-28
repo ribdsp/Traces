@@ -24,6 +24,10 @@ export const readSessionMetaTool: ToolDefinition = {
   description:
     'Get the shape of the recording before anything else: duration, viewport, browser, pages visited, and counts of clicks, inputs, console errors and failed requests. Call this first, because every other tool takes times in ms relative to the start of the recording.',
 
+  // Counts and a duration are ours; `navigations` and `userAgent` are strings the recorded page
+  // supplied, and a URL is a perfectly good place to hide an instruction.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {},

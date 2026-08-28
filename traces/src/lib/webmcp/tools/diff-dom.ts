@@ -41,6 +41,10 @@ export const diffDomToolDefinition: ToolDefinition = {
     'keep the interval tight — a second either side of a transition beats the whole recording.',
   ].join(' '),
 
+  // Reads two instants and restores the playhead. Every change it reports quotes the old and new text or
+  // attribute value, so the payload is recorded content by construction.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

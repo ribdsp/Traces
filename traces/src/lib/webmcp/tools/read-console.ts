@@ -51,6 +51,9 @@ export const readConsoleTool: ToolDefinition = {
     'that the page logged nothing at all.',
   ].join(' '),
 
+  // Console messages are whatever the recorded page chose to log, verbatim.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

@@ -55,6 +55,15 @@ export type ToolDefinition = {
   description: string
   inputSchema: ToolInputSchema
   execute: (args: Record<string, unknown>) => Promise<ToolResponse>
+  /**
+   * The spec's `ToolAnnotations` hints, forwarded to the host by `registerTools`.
+   *
+   * Omitted where both hints would be `false`, which is their spec default — a block saying nothing is
+   * worse than no block, because it reads as a judgement that was made. So absence here means "this
+   * tool changes something, and its result carries none of the recorded page's own text", and every
+   * present block carries the reason it is set.
+   */
+  annotations?: ToolAnnotations
 }
 
 /** Plain prose for a model. */

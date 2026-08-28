@@ -107,6 +107,10 @@ export const readNetworkTool: ToolDefinition = {
     'exactly the evidence that an empty dropdown was the server\'s fault rather than the page\'s.',
   ].join(' '),
 
+  // Request URLs and response-body summaries both come off the wire of the recorded session. Bodies are
+  // summarised rather than returned, which shortens the payload without making it ours.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

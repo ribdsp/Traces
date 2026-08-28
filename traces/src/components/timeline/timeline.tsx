@@ -71,10 +71,10 @@ export function Timeline() {
    */
   if (!recording) {
     return (
-      <div className="flex h-24 shrink-0 items-center justify-center border-t border-zinc-800 px-6">
-        <p className="text-center text-[11px] text-zinc-600">
+      <div className="flex h-24 shrink-0 items-center justify-center border-t border-line px-6">
+        <p className="text-center text-[11px] text-muted">
           The shared timeline appears here once a recording is loaded.
-          <span className="mt-0.5 block text-zinc-700">
+          <span className="mt-0.5 block text-faint">
             Everything you mark and everything the agent finds lands on this one axis, labelled by who
             found it.
           </span>
@@ -97,8 +97,19 @@ export function Timeline() {
   }
 
   return (
+    /*
+     * `overflow-x-clip` is the frame guard, not styling. Every layer here is positioned by percentage and
+     * several are centred on it — `EventTrack`'s hit target is 9px with `-translate-x-1/2`, so an event at
+     * the end of the recording puts 4.5px of a button past the right edge, and the ticks and the playhead
+     * each put 1px there. `<body>` is `overflow-hidden`, but with `<html>` visible that propagates to the
+     * viewport and leaves the *body* visible, so those pixels do not vanish: they make the document 725px
+     * wide at a 720px window. Nobody can scroll to them with a wheel, and tabbing onto the last event
+     * marker scrolls the whole frame sideways to reveal it, which is the one thing this page must never do.
+     * Measured with `race-condition` loaded at 720px. `clip` rather than `hidden` so the vertical axis can
+     * stay `visible` — `hidden` on one axis computes the other to `auto` and hands the timeline a scrollbar.
+     */
     <div
-      className="relative h-24 shrink-0 select-none border-t border-zinc-800 bg-zinc-950"
+      className="relative h-24 shrink-0 select-none overflow-x-clip border-t border-line bg-base"
       onMouseMove={(event) => {
         const at = timeAt(event.clientX, event.currentTarget.getBoundingClientRect())
         // Guarded rather than throttled: a pointer emits these faster than the axis can say anything
@@ -123,9 +134,9 @@ export function Timeline() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-3">
         {ticks.map((at) => (
           <span key={at} className="absolute top-0" style={{ left: positionOf(at) }}>
-            <span aria-hidden className="absolute top-0 h-1.5 w-px bg-zinc-800" />
+            <span aria-hidden className="absolute top-0 h-1.5 w-px bg-line" />
             <span
-              className={`absolute top-1.5 font-mono text-[9px] leading-none text-zinc-600 ${anchorOf(at)}`}
+              className={`absolute top-1.5 font-mono text-[9px] leading-none text-faint ${anchorOf(at)}`}
             >
               {formatSeconds(at)}
             </span>
@@ -147,9 +158,9 @@ export function Timeline() {
           className="pointer-events-none absolute top-0 h-full"
           style={{ left: positionOf(hoverAtMs) }}
         >
-          <span aria-hidden className="absolute top-0 h-full w-px bg-zinc-700/70" />
+          <span aria-hidden className="absolute top-0 h-full w-px bg-faint/70" />
           <span
-            className={`absolute top-0 bg-zinc-900 px-1 font-mono text-[10px] leading-tight text-zinc-200 ${anchorOf(hoverAtMs)}`}
+            className={`absolute top-0 bg-panel px-1 font-mono text-[10px] leading-tight text-ink ${anchorOf(hoverAtMs)}`}
           >
             {formatSeconds(hoverAtMs)}
           </span>
@@ -157,7 +168,7 @@ export function Timeline() {
       ) : null}
 
       <div
-        className="pointer-events-none absolute top-0 h-full w-px bg-zinc-100"
+        className="pointer-events-none absolute top-0 h-full w-px bg-ink"
         style={{ left: positionOf(currentTime) }}
         aria-hidden
       />

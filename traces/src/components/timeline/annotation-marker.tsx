@@ -23,14 +23,15 @@ interface AnnotationMarkerProps {
  *
  * So there are two independent channels, and which is which matters: **colour is severity, shape is
  * authorship.** An amber marker is a warning, not the agent's — the agent's are the ones with a diamond
- * head, at any severity. That is the opposite of AuthorBadge, where amber does mean the agent, and it is
- * exactly why the badge is rendered here as well: the one channel that cannot be misread is words.
+ * head, at any severity. Authorship has its own two colours in the palette, `human` and `agent`, and this
+ * band deliberately spends neither: severity owns the hue here. That is exactly why the badge is rendered
+ * as well — the one channel that cannot be misread is words.
  */
 
 const TONES: Record<Severity, { fill: string; text: string }> = {
-  info: { fill: 'bg-zinc-400', text: 'text-zinc-300' },
-  warn: { fill: 'bg-amber-400', text: 'text-amber-200' },
-  error: { fill: 'bg-rose-400', text: 'text-rose-200' },
+  info: { fill: 'bg-muted', text: 'text-ink' },
+  warn: { fill: 'bg-warn', text: 'text-warn' },
+  error: { fill: 'bg-error', text: 'text-error' },
 }
 
 export function AnnotationMarker({ marker, left }: AnnotationMarkerProps) {
@@ -85,11 +86,11 @@ export function AnnotationMarker({ marker, left }: AnnotationMarkerProps) {
         reached from the keyboard, since focusing it is what would have revealed it.
       */}
       <div className="absolute left-2 top-0 z-20 hidden whitespace-nowrap group-hover:block group-focus-within:block">
-        <span className="inline-flex items-center gap-1 border border-zinc-800 bg-zinc-900 px-1 py-0.5">
+        <span className="inline-flex items-center gap-1 border border-line bg-panel px-1 py-0.5">
           <span className={`text-[10px] ${tone.text} ${marker.rejected ? 'line-through' : ''}`}>
             {marker.label}
           </span>
-          <span className="font-mono text-[9px] text-zinc-500">{formatSeconds(marker.timestamp)}</span>
+          <span className="font-mono text-[9px] text-muted">{formatSeconds(marker.timestamp)}</span>
           <AuthorBadge author={marker.author} />
 
           {canReject ? (
@@ -97,7 +98,7 @@ export function AnnotationMarker({ marker, left }: AnnotationMarkerProps) {
               type="button"
               onClick={toggleRejected}
               aria-label={`${marker.rejected ? 'Restore' : 'Reject'} the agent's marker “${marker.label}”`}
-              className="ml-0.5 border-l border-zinc-800 pl-1 text-[9px] uppercase tracking-wide text-zinc-500 hover:text-zinc-100"
+              className="ml-0.5 border-l border-line pl-1 text-[9px] uppercase tracking-wide text-muted hover:text-ink"
             >
               {marker.rejected ? 'restore' : 'reject'}
             </button>

@@ -1,5 +1,6 @@
 'use client'
 
+import { Pause, Play } from 'lucide-react'
 import { useEffect } from 'react'
 import {
   PLAYBACK_SPEEDS,
@@ -101,20 +102,35 @@ export function PlayerControls() {
   }, [disabled, playback])
 
   return (
-    <div className="flex items-center gap-3 border-t border-zinc-800 px-3 py-2 text-xs text-zinc-400">
+    /*
+      `flex-wrap` with a floor under the scrubber, rather than one row that fits at 1280px and clips at
+      720px. The left panel is only ~337px wide when the window is 720 — the agent column is a fixed
+      380px — and eight controls in a row do not fit in that. Wrapping puts the speeds and the attribution
+      on a second line and gives the scrubber the full width, which is the better narrow layout anyway;
+      the alternative was hiding the duration, and a player that stops saying how long the recording is
+      has lost something a viewer actually reads.
+    */
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-3 py-2 text-xs text-muted">
       <button
         type="button"
         onClick={playback.toggle}
         disabled={disabled}
         title={playback.isPlaying ? 'Pause (space)' : 'Play (space)'}
         aria-label={playback.isPlaying ? 'Pause' : 'Play'}
-        className="w-12 shrink-0 border border-zinc-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-300 hover:border-zinc-600 hover:text-zinc-100 disabled:border-zinc-900 disabled:text-zinc-700"
+        className="flex h-5 w-8 shrink-0 items-center justify-center border border-line text-ink hover:border-faint focus-visible:border-ink focus-visible:outline-none disabled:border-panel disabled:text-faint"
       >
-        {playback.isPlaying ? 'pause' : 'play'}
+        {/* The glyph is the whole control, so `aria-label` above is its only name — do not drop it. */}
+        {playback.isPlaying ? (
+          <Pause aria-hidden size={14} strokeWidth={1.5} />
+        ) : (
+          <Play aria-hidden size={14} strokeWidth={1.5} />
+        )}
       </button>
 
-      <span className="shrink-0 font-mono tabular-nums">{(currentTime / 1000).toFixed(3)}s</span>
-      <span className="shrink-0 text-zinc-600">/ {(durationMs / 1000).toFixed(3)}s</span>
+      <span className="shrink-0 font-mono tabular-nums text-ink">
+        {(currentTime / 1000).toFixed(3)}s
+      </span>
+      <span className="shrink-0 text-faint">/ {(durationMs / 1000).toFixed(3)}s</span>
 
       {/*
         `step` matches the arrow-key step so a scrubber that has focus behaves like the global shortcut
@@ -135,7 +151,12 @@ export function PlayerControls() {
           playback.pause()
           sessionActions().setCurrentTime(Number(event.target.value), 'human')
         }}
-        className="h-1 min-w-0 flex-1 cursor-pointer accent-sky-400 disabled:cursor-default disabled:accent-zinc-700"
+        /*
+          `accent-ink` rather than the `human` token: both parties move this playhead — the agent's seeks
+          write to the same store — so the control itself must not claim an author. The `moved by AGENT`
+          badge at the end of the row is what says who did, and it is the only thing here that may.
+        */
+        className="h-1 min-w-[6rem] flex-1 cursor-pointer accent-ink disabled:cursor-default disabled:accent-line"
       />
 
       <div className="flex shrink-0 gap-1">
@@ -146,10 +167,10 @@ export function PlayerControls() {
             onClick={() => playback.setSpeed(speed)}
             disabled={disabled}
             aria-pressed={playback.speed === speed}
-            className={`border px-1 py-0.5 font-mono text-[10px] disabled:border-zinc-900 disabled:text-zinc-700 ${
+            className={`border px-1 py-0.5 font-mono text-[10px] focus-visible:border-ink focus-visible:outline-none disabled:border-panel disabled:text-faint ${
               playback.speed === speed
-                ? 'border-zinc-600 text-zinc-100'
-                : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                ? 'border-faint text-ink'
+                : 'border-line text-muted hover:text-ink'
             }`}
           >
             {speed}×
@@ -162,7 +183,7 @@ export function PlayerControls() {
         it explains something already on screen rather than announcing it — and it disappears the moment
         the human moves the playhead themselves.
       */}
-      <span className="w-28 shrink-0 text-right text-[10px] text-zinc-600">
+      <span className="w-28 shrink-0 text-right text-[10px] text-faint">
         {lastSeekAuthor === 'agent' ? (
           <>
             moved by
