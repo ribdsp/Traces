@@ -47,3 +47,11 @@ Thumbs.db
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#ai agent
+.claude/
+.cursor/
+.codex/
+
+# MCP tool artefacts — console logs and page snapshots from browser automation
+.playwright-mcp/
