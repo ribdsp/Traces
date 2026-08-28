@@ -10,8 +10,6 @@ interface ToolStatusBannerProps {
 /**
  * Says out loud whether the tool surface is actually live.
  *
- * Owner: Faiq.
- *
  * Without this, the failure mode is brutal: the origin trial token is missing or expired, no tool ever
  * registers, and the page looks completely fine. Someone loses an evening to that — probably during
  * judging, on a browser that isn't ours.

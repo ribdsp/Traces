@@ -6,8 +6,6 @@ import type { Recording } from '@/types/domain'
 /**
  * A thin, typed wrapper over the rrweb Replayer.
  *
- * Owner: Riko.
- *
  * Why a wrapper at all: `mirrorDocument()` is the load-bearing method of the whole project. The
  * replayed page lives in an iframe that the Replayer creates itself, which makes it same-origin and
  * therefore readable from our code. Everything Traces can answer that a server cannot rests on that

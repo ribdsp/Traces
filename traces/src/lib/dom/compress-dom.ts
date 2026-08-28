@@ -3,7 +3,7 @@ import type { CompressedDomResult } from '@/types/domain'
 /**
  * The agent-legible DOM representation.
  *
- * Owner: Riko. Full specification: docs/agent-legible-dom.md.
+ * Full specification: docs/agent-legible-dom.md.
  *
  * This is the most consequential file in the project, and the reason is worth stating plainly: an
  * unbudgeted DOM dump is a *silent* failure. Send 800 KB of HTML and nothing throws — the agent
@@ -397,7 +397,7 @@ function clampToBudget(dom: string): { dom: string; clamped: boolean } {
 /**
  * Compress a DOM subtree into the agent-legible representation.
  *
- * Owner: Riko. Specification and budget: docs/agent-legible-dom.md.
+ * Specification and budget: docs/agent-legible-dom.md.
  *
  * Inclusion rules, applied in priority order (see the PRIORITY_ constants above):
  *   1. interactive elements — input, select, textarea, button, a[href], [role], [tabindex]

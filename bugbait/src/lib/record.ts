@@ -6,8 +6,6 @@ import { record } from 'rrweb'
 /**
  * Records the session and hands back a JSON file Traces can load.
  *
- * Owner: Vicko.
- *
  * Two decisions here that matter more than the code:
  *
  * **Record inputs as masked.** rrweb can capture every keystroke, and this is a checkout form —
@@ -268,7 +266,7 @@ export function currentRecorder(): RecorderHandle | null {
 }
 
 /*
- * Day 5 (vicko) — implemented. What that assignment asked for and where it is:
+ * The three decisions in `startRecording` the rest of the pipeline depends on:
  *
  *   - `checkoutEveryNms` is the load-bearing option: it forces periodic full snapshots, which is what
  *     checkpoint-index.ts indexes and what makes each bisect probe cost ~1s instead of ~10s. Each one

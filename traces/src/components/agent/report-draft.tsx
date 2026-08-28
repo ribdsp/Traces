@@ -10,7 +10,7 @@ import type { Recording, Report } from '@/types/domain'
 /**
  * The output of the whole investigation: a bug report the human can approve, edit, or copy.
  *
- * Owner: Faiq. Pairs with `propose_report`.
+ * Pairs with `propose_report`.
  *
  * One rule this component must not soften: a step with `verified: false` is rendered **as unverified**,
  * next to the verified ones. `buildReport` marks a step unverified when no recorded event supports it,
@@ -21,7 +21,7 @@ import type { Recording, Report } from '@/types/domain'
  * Every timestamp is clickable and seeks. A report whose claims can be verified in one click is the
  * artefact worth ending the demo on.
  *
- * Implemented — faiq, Day 5:
+ * What shipped, and why:
  *   - every field of `Report`, with each timestamp a seek
  *   - unverified steps say the word and explain it in a sentence, once, under the list. Colour alone would
  *     leave the distinction to whoever noticed the amber, and it is the most important distinction here.

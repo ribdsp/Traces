@@ -1,8 +1,6 @@
 /**
  * Regenerates the sample recordings in `traces/public/recordings/` by driving a real browser.
  *
- * Owner: Vicko.
- *
  * **These are scripted fixtures, not human sessions,** and the difference is worth being precise about.
  * Everything in the resulting file is real: a real Chrome, the real bugbait build, the real
  * `rrweb.record()`, real HTTP to the real stub endpoints, real layout and real CSS. What is synthetic is

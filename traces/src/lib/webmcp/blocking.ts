@@ -3,7 +3,7 @@ import type { Gate, GateResult } from '@/types/domain'
 /**
  * The human-in-the-loop gate.
  *
- * Owner: Vicko. Contract: docs/tools.md#blocking-tools.
+ * Contract: docs/tools.md#blocking-tools.
  *
  * Four tools don't return until a person acts — `claim_next_task`, `ask_human_visual`,
  * `propose_hypotheses`, `propose_report`. That is the mechanism behind the claim that the human is a
@@ -21,7 +21,7 @@ import type { Gate, GateResult } from '@/types/domain'
  */
 
 /**
- * TODO(vicko), Day 1: replace with the measured value from S1, minus a healthy margin.
+ * TODO: Day 1 — replace with the measured value from S1, minus a healthy margin.
  * 25s is a guess chosen to be survivable rather than correct — it is not a measurement.
  */
 export const GATE_TIMEOUT_MS = 25_000

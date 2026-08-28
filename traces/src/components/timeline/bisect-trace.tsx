@@ -9,8 +9,6 @@ import { anchorFor, percentOf } from './axis'
 /**
  * The binary search, drawn.
  *
- * Owner: Faiq.
- *
  * The most persuasive four seconds of the demo, and the reason to build it properly. Each probe
  * appears in order, the searched window visibly halves, and the answer converges on a millisecond.
  * A viewer who has never heard of WebMCP watches a search happen inside a web page and understands
@@ -20,7 +18,7 @@ import { anchorFor, percentOf } from './axis'
  * Animate in trace order with a short stagger (~80ms). Rendering all six probes at once shows the
  * result but not the search, which is the part worth showing.
  *
- * Implemented — faiq, Day 4:
+ * What shipped, and why:
  *   - one dot per probe, in three treatments: filled bright for true, filled dim for false, and a hollow
  *     ring for `elementMissing`. That last one is a different claim — "there was nothing to ask about"
  *     rather than "the answer was no" — and merging the two is how a report ends up describing an element

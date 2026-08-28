@@ -7,8 +7,6 @@ import { ToolStatusBanner } from '@/components/ui/tool-status-banner'
 /**
  * Registers every tool exactly once, and reports whether it worked.
  *
- * Owner: Vicko.
- *
  * The cleanup is what makes this safe, and it is not optional. React 19 in development mounts effects
  * twice — mount, unmount, mount — so without `unregisterTools()` on the way out you get a duplicate
  * surface where every call is ambiguous. Aborting on cleanup makes the double pass a no-op, and gives
@@ -29,7 +27,7 @@ export function ToolSurface() {
     try {
       result = registerTools()
     } catch (error: unknown) {
-      // registerTools is Vicko's Day 3. Until it exists, the app still loads and says why it can't.
+      // If registration throws, the app still loads and says why it can't.
       const message = error instanceof Error ? error.message : 'registration failed'
       result = { mode: 'unavailable', registered: [] }
       // eslint-disable-next-line no-console -- the only diagnostic path before the banner is real

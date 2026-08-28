@@ -10,7 +10,7 @@ import { anchorFor, percentOf } from './axis'
 /**
  * The bottom band of the timeline: what actually happened, as ticks.
  *
- * Owner: Faiq, over Riko's event-digest.
+ * Sits over lib/replay/event-digest.
  *
  * Same digest the agent sees through `list_events`, drawn instead of listed. That correspondence is
  * worth protecting: when the agent says "there's a failed request at 12.1s", the human should find a
@@ -20,7 +20,7 @@ import { anchorFor, percentOf } from './axis'
  * the recording id. Recomputing thousands of events on every playhead tick is the obvious way to make
  * scrubbing stutter.
  *
- * Implemented — faiq, Day 3:
+ * What shipped, and why:
  *   - one tick per event, positioned through the shared `percentOf` so a tick, a marker and a bisect probe
  *     at the same millisecond land on the same pixel
  *   - colour is severity, from the same `severityOf` the markers use, in the same three fills — so the two

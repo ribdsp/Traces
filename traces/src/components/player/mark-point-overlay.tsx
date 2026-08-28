@@ -7,7 +7,7 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
 /**
  * The overlay that turns a human's glance into structured data.
  *
- * Owner: Faiq. Pairs with the `ask_human_visual` tool.
+ * Pairs with the `ask_human_visual` tool.
  *
  * While `pendingAsk` is set, the replay area becomes clickable: the human clicks the moment they are
  * talking about, and that click supplies `markedTimestamp` in the answer. That is the whole reason
@@ -17,7 +17,7 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  * Keep the overlay out of the way when there's no question pending. An always-on click target on the
  * player surprises people who were trying to scrub.
  *
- * Implemented — faiq, Day 4:
+ * What shipped, and why:
  *   - the stage dims and the question sits over it, so a waiting agent is impossible to miss
  *   - the marked moment is the playhead, shown live in the card. The stage is a *spatial* surface — a
  *     click on it names a place, not an instant — so the moment is set on the timeline, which this overlay

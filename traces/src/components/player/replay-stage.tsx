@@ -12,7 +12,7 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
 /**
  * Mounts the rrweb Replayer and publishes the engine so tools can drive it.
  *
- * Owner: Faiq (component), over Riko's lib/replay.
+ * Sits over lib/replay.
  *
  * This is the only component in the app that owns a non-React object with a lifecycle, so it is the
  * only one that needs care:

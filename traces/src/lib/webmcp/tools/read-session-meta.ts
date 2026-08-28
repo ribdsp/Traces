@@ -4,8 +4,6 @@ import { currentRecording } from './tool-context'
 /**
  * 'read_session_meta' — see docs/tools.md#1-read_session_meta for the full contract.
  *
- * Owner: Vicko. Implemented — vicko, Day 3.
- *
  * The shape returned is `RecordingMeta` from types/domain.ts, unchanged: it was designed to be an
  * agent's first call and is already small. `load-recording.ts` derives every field of it once, at load
  * time, so this tool does no counting of its own — a second count here could disagree with the timeline

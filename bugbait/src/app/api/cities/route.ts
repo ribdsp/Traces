@@ -4,8 +4,6 @@ import { LATENCY_MS } from '@/lib/bugs'
 /**
  * `GET /api/cities` — always succeeds, always returns cities.
  *
- * Owner: Vicko.
- *
  * There is no scenario branch here, and that is the interesting part. In the `race` scenario this
  * endpoint behaves perfectly: 200, a full list, in under a second. The bug is entirely on the client,
  * which reads the list once during its first render — before this response exists — and never looks

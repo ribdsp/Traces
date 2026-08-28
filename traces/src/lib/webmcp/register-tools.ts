@@ -4,8 +4,6 @@ import { installWebMcpPolyfill, polyfillRegistry } from './polyfill'
 /**
  * The one place every tool is registered.
  *
- * Owner: Vicko.
- *
  * Everything goes through a single `AbortController`, so unmounting deregisters the entire surface in
  * one line. Scattering `registerTool` calls across components is the version of this that leaves
  * stale tools registered after a hot reload — and the symptom is a model calling a tool whose closure
@@ -98,7 +96,7 @@ export function unregisterTools(): void {
  * changing shape in response to the investigation. It demos in four seconds and it is the clearest
  * possible answer to "why does this need to be a live page rather than an API".
  *
- * TODO(vicko), Day 6, only if every gate has passed.
+ * TODO: Day 6 — only if every gate has passed.
  */
 export function registerDynamicTool(_hypothesisId: string): void {
   throw new Error('registerDynamicTool: not implemented')

@@ -8,7 +8,7 @@ import type { Author } from '@/types/domain'
 /**
  * The three pieces of playhead behaviour the store deliberately does not own.
  *
- * Owner: Faiq, over Riko's lib/replay and Vicko's lib/store.
+ * Sits over lib/replay and lib/store.
  *
  * `setCurrentTime` writes the store and stops there — see the comment on it in lib/store/session.ts,
  * which is about *feed noise* rather than about pixels. Nothing in the store moves the replay. The

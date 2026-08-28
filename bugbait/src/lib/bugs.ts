@@ -1,8 +1,6 @@
 /**
  * The bugs, as data.
  *
- * Owner: Vicko.
- *
  * Every bug is selected with a query parameter — `/checkout?bug=empty-province` — for one reason: the
  * recording has to be reproducible. Anyone cloning this repo must be able to produce the same session
  * we did, or the sample recordings are magic artefacts nobody can regenerate. A bug that only happens
@@ -116,8 +114,7 @@ export const BUG_SPECS: Record<Bug, BugSpec> = {
 }
 
 /*
- * Day 5 (vicko) — implemented. Where each half of that assignment landed, so whoever changes a bug
- * next knows which file to open:
+ * Where the moving parts of a bug live, so whoever changes one next knows which file to open:
  *
  *   - the bugs themselves live in `app/checkout/page.tsx`, driven by `activeBug(location.search)`
  *   - the endpoints are stubbed *inside* this app — `app/api/provinces/route.ts` and

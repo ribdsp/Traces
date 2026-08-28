@@ -9,7 +9,7 @@ import type { Task, TaskStatus } from '@/types/domain'
 /**
  * Where a human hands work to the agent.
  *
- * Owner: Faiq. Pairs with `claim_next_task`.
+ * Pairs with `claim_next_task`.
  *
  * A human types a task; the agent picks it up by calling `claim_next_task`, which blocks until one
  * exists. That inversion is the interesting part — the agent waits on the person rather than the
@@ -20,7 +20,7 @@ import type { Task, TaskStatus } from '@/types/domain'
  * with no click in between, is the clearest demonstration in the whole app that something else is
  * genuinely reading this page.
  *
- * Implemented — faiq, Day 4:
+ * What shipped, and why:
  *   - three treatments, because the flip between them is the demonstration: `open` waiting, `claimed`
  *     with a live "working" indication and how long it has been held, `done` struck through
  *   - Enter submits and Shift+Enter starts a newline, which needs a textarea rather than an input

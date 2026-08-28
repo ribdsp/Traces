@@ -4,8 +4,6 @@ import type { RrwebEvent } from '@/types/domain'
  * Narrowing predicates over rrweb's raw event `data`, shared by load-recording.ts (recording-level
  * counts) and event-digest.ts (the digest itself).
  *
- * Owner: Riko.
- *
  * Kept in one place so the two files can never classify the same event two different ways, and kept
  * dependency-free on purpose: these read the plain JSON shape rrweb produces, never the rrweb package
  * itself, which is what lets `lib/replay`'s tests run in milliseconds without a browser (see

@@ -7,7 +7,7 @@ import { currentEngine, currentRecording, restorePlayhead } from './tool-context
 /**
  * `bisect` — binary-search the replay timeline for the first moment a predicate holds.
  *
- * Owner: Vicko (wrapper) over Riko's lib/bisect. Contract: docs/tools.md#4-bisect.
+ * Wraps lib/bisect. Contract: docs/tools.md#4-bisect.
  *
  * This is the tool the project exists for, and the reason it cannot be an API endpoint: the agent
  * sends a *predicate*, and the page runs a search — replaying to a different point in time on each
@@ -77,7 +77,7 @@ export const bisectTool: ToolDefinition = {
   },
 
   /**
-   * Implemented — vicko, Day 3. What the wrapper is responsible for, in order:
+   * What the wrapper is responsible for, in order:
    *
    *   - `validateSelector` and `validatePredicate` first, their messages returned verbatim: they are
    *     already written for a model to act on, and rephrasing them here would produce two vocabularies

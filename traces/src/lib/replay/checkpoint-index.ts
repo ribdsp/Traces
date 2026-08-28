@@ -6,8 +6,6 @@ const FULL_SNAPSHOT = 2
 /**
  * Index the positions of full snapshots in a recording.
  *
- * Owner: Riko.
- *
  * This tiny file is what makes `bisect` fast enough to be a demo rather than a spinner. rrweb emits
  * a full snapshot periodically; replaying to time `t` from the nearest preceding snapshot costs a
  * fraction of replaying from zero. A bisect does ~6 probes, so the difference between "from the

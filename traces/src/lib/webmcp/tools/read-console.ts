@@ -6,7 +6,7 @@ import { currentRecording, optionalWindow, truncate } from './tool-context'
 /**
  * 'read_console' — see docs/tools.md#7-read_console for the full contract.
  *
- * Owner: Vicko, over Riko's lib/replay/event-digest. Implemented — vicko, Day 3.
+ * Wraps lib/replay/event-digest.
  *
  * Two budgets, both from CONTRIBUTING.md § Every tool response has a budget: 200 characters per
  * message and `CONSOLE_LIMIT` messages per call. A stack trace pasted into `console.error` is

@@ -3,9 +3,8 @@
 @tailwind utilities;
 
 /*
- * Owner: Faiq.
  *
- * Deliberately almost empty. The visual direction is Faiq's to make on Day 6, and a scaffold that
+ * Deliberately almost empty. The visual direction is a Day 6 decision, and a scaffold that
  * pre-picks a font stack and a palette makes that decision by default rather than on purpose. What is
  * here is only what the replay mechanism needs, plus the two globals that would otherwise be
  * rediscovered at 2am.

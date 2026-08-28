@@ -4,8 +4,6 @@ import { isBug, LATENCY_MS, SCENARIO_HEADER } from '@/lib/bugs'
 /**
  * `GET /api/provinces` — the request at the centre of the primary demo bug.
  *
- * Owner: Vicko.
- *
  * When the `empty-province` scenario is armed this returns **200 with `[]`**, and the distinction from
  * a 500 is the whole point. An error status shows up red in a network tab and the investigation takes
  * four seconds; a success that happens to be empty looks like nothing at all, and only the *shape* of

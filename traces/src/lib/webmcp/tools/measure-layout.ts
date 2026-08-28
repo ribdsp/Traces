@@ -6,9 +6,9 @@ import { currentEngine, currentRecording, documentAt, requireTimestamp, restoreP
 /**
  * 'measure_layout' — see docs/tools.md#9-measure_layout for the full contract.
  *
- * Owner: Vicko, over Riko's lib/dom/measure-layout.
+ * Wraps lib/dom/measure-layout.
  *
- * Implemented — vicko, Day 5. This is the one visual bug class an agent can settle without eyes: a
+ * This is the one visual bug class an agent can settle without eyes: a
  * button that is present, enabled, and simply covered. That answer only exists when the covering
  * element is measured in the *same call* as the covered one, because `overlaps` is computed pairwise
  * over the boxes in one result — hence a `selectors` array rather than the single `selector` docs §9

@@ -11,8 +11,6 @@ import { EventTrack } from './event-track'
 /**
  * The shared timeline: one horizontal axis that both the human and the agent write to.
  *
- * Owner: Faiq.
- *
  * This is the component that carries the collaboration claim. Everything the agent finds lands here,
  * on the same axis as everything the human noticed, colour-coded by author. Someone watching the demo
  * should be able to see, without narration, that two parties were working on one artefact.
@@ -20,7 +18,7 @@ import { EventTrack } from './event-track'
  * All positioning is a percentage of `durationMs`, never pixels. The panel is resizable and the demo
  * gets recorded at a different width than anyone develops at.
  *
- * Implemented — faiq, Day 2 (axis) and Day 4 (layers):
+ * What shipped, and why:
  *   - the layers stack in DOM order, seek button *first*. Children with no `z-index` paint in document
  *     order, so the full-area button being last was what made every layer above it unclickable and
  *     forced `AnnotationMarker`'s `z-10`. Putting it first is the fix; the `z-10` stays because it is

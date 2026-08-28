@@ -3,7 +3,7 @@ import type { Recording } from '@/types/domain'
 /**
  * The three sample recordings, as a static list.
  *
- * Owner: Faiq. Shared by the picker in the header and the empty state on the stage, so the names a
+ * Shared by the picker in the header and the empty state on the stage, so the names a
  * judge reads in one place are the names that load in the other.
  *
  * Why hardcoded rather than read from the directory: Traces is a static export. There is no server at

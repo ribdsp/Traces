@@ -7,8 +7,6 @@ import { currentRecorder, isRecording, startRecording, type RecorderHandle, type
 /**
  * The recorder control.
  *
- * Owner: Vicko.
- *
  * The requirement that shapes this whole component: **it must not exist in the DOM during a take.**
  * rrweb captures the document, so a "Download recording" button in the capture becomes a button the
  * agent finds while investigating, reasons about, and possibly reports. `blockClass` would not help —

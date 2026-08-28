@@ -6,8 +6,6 @@ import { currentRecording, optionalString, optionalWindow, truncate } from './to
 /**
  * 'read_network' — see docs/tools.md#8-read_network for the full contract.
  *
- * Owner: Vicko. Implemented — vicko, Day 3.
- *
  * This tool reads the raw custom events rather than the digest, and that is a deliberate exception to
  * "wrap the pure function". `lib/replay/event-digest` reports network activity through
  * `isNetworkFailureEvent`, which by construction matches only `ok === false` — so a digest-backed

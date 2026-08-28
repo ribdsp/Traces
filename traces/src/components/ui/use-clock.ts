@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react'
 /**
  * A wall clock that re-renders, for the two places that show elapsed real time.
  *
- * Owner: Faiq.
- *
  * `ActivityEntry.at` and `AskHumanVisual.askedAt` are `Date.now()` values, not recording times, so "3s
  * ago" and "waiting 14s" go stale the moment they are painted. A shared ticker keeps that in one place and
  * makes the cost explicit: one interval per consumer, at whatever coarseness that consumer actually needs.

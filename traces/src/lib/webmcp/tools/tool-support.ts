@@ -4,10 +4,10 @@ import { retryGate } from '../blocking'
 import { type JsonSchemaNode, type ToolResponse, json, toolError } from '../tool-types'
 
 /**
- * Shared plumbing for the seven tools Vicko owns: argument reading, budgets, and the ticket/retry
+ * Shared plumbing for the seven tools that need it: argument reading, budgets, and the ticket/retry
  * half of the blocking contract.
  *
- * Owner: Vicko. Not a tool — `index.ts` never imports this — but the four blocking tools would
+ * Not a tool — `index.ts` never imports this — but the four blocking tools would
  * otherwise each carry their own copy of the retry path, and four copies of a timing contract is four
  * chances to get it subtly different. The one that matters is `collectRetry`: a retry must attach to
  * the *same* question through `retryGate`, never open a second one.

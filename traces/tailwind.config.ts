@@ -3,8 +3,6 @@ import type { Config } from 'tailwindcss'
 /**
  * Traces is an instrument, not a landing page. The palette is deliberately narrow and dark, and the
  * type scale is small — see the UI conventions in CONTRIBUTING.md before adding anything here.
- *
- * Owner: Faiq.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -33,7 +31,7 @@ const config: Config = {
         ok: '#3ecf8e',
       },
       fontFamily: {
-        // Placeholder. Faiq picks the real pair on Day 6; system-ui as "the design" is banned.
+        // Placeholder. The real pair is a Day 6 decision; system-ui as "the design" is banned.
         sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },

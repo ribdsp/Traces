@@ -20,7 +20,7 @@ import { snapshotFindingTool } from './snapshot-finding'
 /**
  * Every tool Traces exposes, in the order a model should discover them.
  *
- * Owner: Vicko. Contract: docs/tools.md.
+ * Contract: docs/tools.md.
  *
  * The order matters more than it looks. Models read a tool list top-down and reach for the first
  * thing that plausibly fits, so the cheap orienting tools come first and the expensive or blocking

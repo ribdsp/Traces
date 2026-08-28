@@ -11,8 +11,6 @@ export const metadata: Metadata = {
 /**
  * The root layout, and the only place the tool surface is mounted.
  *
- * Owner: Faiq (shell), Vicko (registration).
- *
  * Registration lives in a client component rendered here rather than in `page.tsx`, so it survives
  * navigation without re-registering. One `AbortController` inside `register-tools.ts` owns the whole
  * surface; scattering registration into components is the version that leaves stale tools pointing at

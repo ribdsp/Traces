@@ -6,9 +6,7 @@ import { MARKER_LABEL_MAX, capText, clampToRecording } from './tool-support'
 /**
  * 'annotate' — see docs/tools.md for the full contract.
  *
- * Owner: Vicko.
- *
- * Implemented — vicko, Day 3:
+ * What shipped, and why:
  *   - `addMarker` with `author: 'agent'`, so the marker renders in the agent's colour and the human can
  *     reject or undo exactly this one thing (types/domain.ts § Author)
  *   - labels longer than MARKER_LABEL_MAX are rejected rather than trimmed: the label *is* the marker

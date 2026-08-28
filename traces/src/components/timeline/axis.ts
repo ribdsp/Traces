@@ -1,8 +1,6 @@
 /**
  * Turning a recording time into a position on the axis.
  *
- * Owner: Faiq.
- *
  * Three components draw onto the same 96px strip — the axis itself, the event track and the bisect trace —
  * and every one of them needs the same two answers: where does this millisecond sit, and which way should
  * its label hang so it stays inside the panel. Keeping both here is what makes a tick, a marker and a probe

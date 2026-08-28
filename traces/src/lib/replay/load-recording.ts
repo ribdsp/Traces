@@ -30,8 +30,6 @@ function toRrwebEvent(candidate: unknown, index: number): RrwebEvent {
 /**
  * Parse and validate a recording file.
  *
- * Owner: Riko.
- *
  * Validation is not ceremony here. A recording is untrusted input — see docs/threat-model.md (T6) —
  * and a truncated or hand-edited file that fails at load is a readable error, whereas the same file
  * failing on the fourth bisect probe looks like our binary search is broken.

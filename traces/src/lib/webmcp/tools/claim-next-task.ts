@@ -14,13 +14,11 @@ import {
 /**
  * 'claim_next_task' — see docs/tools.md for the full contract.
  *
- * Owner: Vicko.
- *
  * This is the tool that inverts who waits on whom. Everywhere else an agent is invoked and a person
  * waits for it; here the agent parks itself on the human's queue and picks up work the moment it
  * appears. That is only true because `execute()` genuinely does not resolve until a task exists.
  *
- * Implemented — vicko, Day 4:
+ * What shipped, and why:
  *   - a task already open is handed over immediately, with no gate at all
  *   - otherwise `createGate('task')`, and a store watcher claims the next task a human types
  *   - claiming happens inside the watcher's detector rather than after it, so the check and the write

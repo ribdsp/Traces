@@ -17,7 +17,7 @@ import {
 /**
  * `ask_human_visual` — the agent declares it cannot see, and recruits the human as its sensor.
  *
- * Owner: Vicko. Contract: docs/tools.md#12-ask_human_visual.
+ * Contract: docs/tools.md#12-ask_human_visual.
  *
  * The direction of information here is the inverse of the usual story. Normally the agent wants to
  * see the screen: it takes a screenshot and guesses. Here it states plainly that it cannot see
@@ -193,7 +193,7 @@ export const askHumanVisualTool: ToolDefinition = {
   },
 
   /**
-   * Implemented — vicko, Day 4:
+   * What shipped, and why:
    *   - `choices` validated to 2..4 distinct options, each under ASK_CHOICE_MAX (see `validateChoices`)
    *   - with a `ticket`, `retryGate` reattaches to the same question; a second gate is never opened
    *   - otherwise `openAsk`, seek to `hintAtMs`, `createGate('ask')`

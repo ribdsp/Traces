@@ -104,7 +104,7 @@ function finalize(
 /**
  * Binary-search the replay timeline for the first moment a predicate holds.
  *
- * Owner: Riko. Contract: docs/tools.md#4-bisect.
+ * Contract: docs/tools.md#4-bisect.
  *
  * This is the idea the project is built on. The agent doesn't fetch a value; it sends a predicate and
  * the page runs a search, replaying to a different point in time on each iteration. Six probes over a

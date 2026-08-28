@@ -15,8 +15,6 @@ import { ResizableSplit } from '@/components/ui/resizable-split'
 /**
  * The whole app, on one screen.
  *
- * Owner: Faiq.
- *
  * Two panels, and the split says what the product is: the replay on the left is what the human is
  * looking at, the agent's work on the right is what the agent is doing, and the timeline underneath
  * belongs to both of them. Nothing here is behind a tab. A viewer should be able to watch an agent
@@ -30,7 +28,7 @@ import { ResizableSplit } from '@/components/ui/resizable-split'
  * MarkPointOverlay is no longer mounted here: it belongs to the stage it dims, and mounting it in both
  * places would have rendered the question twice the day `pendingAsk` first got set.
  *
- * Implemented — faiq, Day 6:
+ * What shipped, and why:
  *   - `a` focuses the agent lane and `p` focuses the scrubber, which are the two things a hand reaches for
  *     during the demo: hand the agent a task, then drive the replay. Both are a long mouse trip apart on a
  *     1280px screen, and the panel between them is where the interesting output appears.
