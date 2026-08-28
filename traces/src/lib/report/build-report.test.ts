@@ -207,4 +207,33 @@ describe('buildReport', () => {
     expect(result.steps).toHaveLength(1)
     expect(result.steps[0]).toMatchObject({ verified: true })
   })
+
+  /**
+   * `buildEventDigest` truncates to the earliest `DIGEST_LIMIT` (40) events unless told otherwise, which
+   * is right for `list_events` — one page of a browsable list — and wrong for a report, which is built
+   * from the whole session. The two tests below are the reason `buildReport` passes an explicit limit.
+   *
+   * A recording long enough to matter is the point: 51 clicks, so the last one falls past the cap. It
+   * also sits more than `MATCH_WINDOW_MS` from every event that survives truncation, so a step citing it
+   * cannot be verified by accidentally matching a nearer neighbour.
+   */
+  function longRecording(): Recording {
+    const early = Array.from({ length: 50 }, (_, index) => clickEvent(100 + index * 100, index + 1))
+    return buildRecording([...early, clickEvent(9_000, 99)], 10_000)
+  }
+
+  it('verifies a proposed step against a late event, not only the ones inside the digest default', () => {
+    const proposed: Partial<Report> = { steps: [{ text: 'User clicks pay', atMs: 9_000, verified: true }] }
+
+    const result = buildReport(longRecording(), proposed)
+
+    expect(result.steps).toEqual([{ text: 'User clicks pay', atMs: 9_000, verified: true }])
+  })
+
+  it('synthesizes steps from the whole recording, not just its first forty events', () => {
+    const result = buildReport(longRecording(), {})
+
+    expect(result.steps).toHaveLength(51)
+    expect(result.steps.at(-1)).toEqual({ text: 'Clicked node 99.', atMs: 9_000, verified: true })
+  })
 })

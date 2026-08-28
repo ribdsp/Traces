@@ -168,7 +168,13 @@ function synthesizeStepsFromDigest(events: DigestEvent[]): ReportStep[] {
 }
 
 export function buildReport(recording: Recording, proposed: Partial<Report>): Report {
-  const { events } = buildEventDigest(recording)
+  // Unbounded on purpose. `buildEventDigest`'s default `DIGEST_LIMIT` keeps the *earliest* 40 events,
+  // which is the right shape for `list_events` — a page of a browsable list — and the wrong one here.
+  // A report is built from the whole session: truncating would make `reconcileStep` reject a step that
+  // cites a real event past the cap as unverified, and would cut `synthesizeStepsFromDigest` off at
+  // whatever happened in the first few seconds. There is no cap to apply afterwards either, because
+  // `STEP_EVENT_KINDS` filters below and the interesting events in these recordings are the late ones.
+  const { events } = buildEventDigest(recording, { limit: Number.MAX_SAFE_INTEGER })
   const stepWorthyEvents = events.filter((event) => STEP_EVENT_KINDS.includes(event.kind))
 
   const steps =
