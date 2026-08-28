@@ -15,7 +15,7 @@ import { anchorFor, percentOf } from './axis'
  * immediately that the agent is not fetching an answer from somewhere — it is making the page compute
  * one.
  *
- * Animate in trace order with a short stagger (~80ms). Rendering all six probes at once shows the
+ * Animate in trace order with a short stagger (~80ms). Rendering all ten probes at once shows the
  * result but not the search, which is the part worth showing.
  *
  * What shipped, and why:

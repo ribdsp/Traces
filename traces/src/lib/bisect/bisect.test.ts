@@ -31,10 +31,12 @@ describe('bisect — the normal case', () => {
     expect(atLastFalse.result).toBe(false)
   })
 
-  it('takes about six probes on a 47-second recording, not forty', async () => {
+  it('takes ten probes on a 47-second recording, not forty', async () => {
     const calls: number[] = []
     const result = await bisect({ from: 0, to: 47_000, probe: monotonicProbe(28_412, calls) })
-    // log2(47000 / 250) ≈ 7.6, plus the two boundary probes.
+    // log2(47000 / 250) ≈ 7.6, plus the two boundary probes. Measured: ten, and ten wherever the
+    // transition sits — the bound is deliberately looser than that, since the assertion worth keeping
+    // is "nowhere near MAX_LOOP_ITERATIONS", not the exact arithmetic of one window width.
     expect(result.iterations).toBeLessThanOrEqual(12)
     expect(calls.length).toBe(result.trace.length)
   })

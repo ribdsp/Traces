@@ -57,11 +57,11 @@ Agent: find_element({ text: "Pay" })
 Agent: bisect({ selector: "#pay-submit",
                 predicate: { kind: "propertyEquals", property: "disabled", equals: true },
                 from: 0, to: 47200 })
-     → firstTrue: 28_450ms   (6 iterations, 1.4s, ±250ms)
+     → firstTrue: 28_577ms   (10 iterations, 1.4s, ±250ms)
 
-        ← the playhead visibly jumps six times while this runs
+        ← the playhead visibly jumps ten times while this runs
 
-Agent: read_dom_at({ timestamp: 28450, scope: "#checkout" })
+Agent: read_dom_at({ timestamp: 28577, scope: "#checkout" })
      → form#checkout [visible]
          input[name=email] value="ana@..." [valid]
          select[name=province] [empty options: 0]
@@ -97,12 +97,12 @@ to an agent through `document.modelContext.registerTool()`. Lots of things *coul
 that would work just as well as a REST API. Traces is not one of them, and the reasons are worth
 stating precisely:
 
-**1. The answer doesn't exist until the page computes it.** `read_dom_at(28450)` isn't a lookup. The
+**1. The answer doesn't exist until the page computes it.** `read_dom_at(28577)` isn't a lookup. The
 page must replay the mutation stream to that instant and reconstruct the DOM. A server holding the
 same recording file cannot answer the question without becoming a replay engine itself.
 
 **2. `bisect` doesn't fetch — it *programs* the page.** The agent sends a predicate and the page runs
-a binary search across the replay timeline, six probes deep. The agent isn't retrieving data; it's
+a binary search across the replay timeline, ten probes deep. The agent isn't retrieving data; it's
 handing the page an algorithm to execute over time. There is no request/response shape for that.
 
 **3. The human is inside the agent's loop, not watching it.** `ask_human_visual` doesn't resolve until
@@ -140,13 +140,16 @@ bisect({
   predicate: { kind: "optionCount", equals: 0 },
   from: 0, to: 47200
 })
-// → { firstTrue: 12_600, iterations: 6, elapsedMs: 1_180, precisionMs: 250,
-//     trace: [ { atMs: 23600, result: true }, { atMs: 11800, result: false }, ... ] }
+// → { firstTrue: 12_721, lastFalse: 12_537, iterations: 10, elapsedMs: 1_180, precisionMs: 250,
+//     trace: [ { atMs: 0, result: false }, { atMs: 47200, result: true },
+//              { atMs: 23600, result: true }, { atMs: 11800, result: false }, ... ] }
 ```
 
-Six probes instead of forty-seven calls. The `trace` isn't decoration either — the UI animates it, so
-a human watches the playhead jump six times and *sees* the agent's reasoning as motion on the
-timeline.
+Ten probes instead of forty-seven calls: the two boundary probes that bracket the window, then eight
+halvings to close it to 250 ms. The count is the same wherever the transition sits — that is what a
+binary search buys. (`elapsedMs` is the one number above that depends on the machine; the probe count
+does not.) The `trace` isn't decoration either — the UI animates it, so a human watches the playhead
+jump ten times and *sees* the agent's reasoning as motion on the timeline.
 
 Predicates are a **closed set of seven structured shapes**, never a string, and never evaluated. That's
 a security property (see [threat model](docs/threat-model.md)) but also a usability one: models fill in
