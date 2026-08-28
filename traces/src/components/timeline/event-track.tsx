@@ -75,7 +75,13 @@ export function EventTrack() {
     if (!recording) return []
     let events: DigestEvent[]
     try {
-      events = buildEventDigest(recording).events
+      // Unbounded on purpose. `buildEventDigest`'s default `DIGEST_LIMIT` keeps the *earliest* 40
+      // events, which is one page of `list_events` and half a timeline. Measured on the three committed
+      // recordings: the default stops the band at 23.2s of a ~44s session every time, silently dropping
+      // 27-35 marks including a console error in two of them. A band that ends early does not look
+      // truncated, it looks like a session where nothing happened after the halfway point — and the
+      // error tick it drops is the one mark someone scanning this band is looking for.
+      events = buildEventDigest(recording, { limit: Number.MAX_SAFE_INTEGER }).events
     } catch {
       // A malformed recording must not take the app down with it — the player, the axis and the tools all
       // still work without this band. (The digest itself ships and is tested; this guard is for the input.)
