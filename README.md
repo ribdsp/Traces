@@ -378,7 +378,11 @@ Full analysis, including what is deliberately **out of scope**:
 | [IBM Plex Sans + Plex Mono](https://github.com/IBM/plex) | OFL-1.1 | one superfamily, so a mono timestamp and a sans label share a line without a step in it — `src/app/fonts.ts` |
 | [vitest](https://vitest.dev) | MIT | the pure modules are tested; the UI is not |
 
-Every dependency is permissively licensed and compatible with MIT redistribution. We deliberately
+Every dependency is permissively licensed and compatible with MIT redistribution. The fonts are the one
+thing not in `package.json`: `next/font` fetches them during `next build` and serves them from this
+origin, so the deployed bundle carries the woff2 files under OFL-1.1 — the licence text and the reserved
+font names live with [the upstream project](https://github.com/IBM/plex/blob/master/LICENSE.txt), and
+nothing here modifies or renames a face. We deliberately
 avoided three tempting libraries: **DuckDB-Wasm** (it's the flagship example in the challenge's own
 materials — using it would weaken the originality of the entry), **ffmpeg.wasm** (LGPL/GPL build
 ambiguity we didn't want in an MIT repo), and **HyperFormula** (AGPL-3.0).
