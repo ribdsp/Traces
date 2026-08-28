@@ -10,7 +10,7 @@ import { anchorFor, percentOf } from './axis'
 /**
  * The bottom band of the timeline: what actually happened, as ticks.
  *
- * Owner: Faiq, over Riko's event-digest.
+ * Sits over lib/replay/event-digest.
  *
  * Same digest the agent sees through `list_events`, drawn instead of listed. That correspondence is
  * worth protecting: when the agent says "there's a failed request at 12.1s", the human should find a
@@ -20,7 +20,7 @@ import { anchorFor, percentOf } from './axis'
  * the recording id. Recomputing thousands of events on every playhead tick is the obvious way to make
  * scrubbing stutter.
  *
- * Implemented — faiq, Day 3:
+ * What shipped, and why:
  *   - one tick per event, positioned through the shared `percentOf` so a tick, a marker and a bisect probe
  *     at the same millisecond land on the same pixel
  *   - colour is severity, from the same `severityOf` the markers use, in the same three fills — so the two
@@ -75,7 +75,13 @@ export function EventTrack() {
     if (!recording) return []
     let events: DigestEvent[]
     try {
-      events = buildEventDigest(recording).events
+      // Unbounded on purpose. `buildEventDigest`'s default `DIGEST_LIMIT` keeps the *earliest* 40
+      // events, which is one page of `list_events` and half a timeline. Measured on the three committed
+      // recordings: the default stops the band at 23.2s of a ~44s session every time, silently dropping
+      // 27-35 marks including a console error in two of them. A band that ends early does not look
+      // truncated, it looks like a session where nothing happened after the halfway point — and the
+      // error tick it drops is the one mark someone scanning this band is looking for.
+      events = buildEventDigest(recording, { limit: Number.MAX_SAFE_INTEGER }).events
     } catch {
       // A malformed recording must not take the app down with it — the player, the axis and the tools all
       // still work without this band. (The digest itself ships and is tested; this guard is for the input.)

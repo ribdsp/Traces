@@ -7,12 +7,12 @@ import { currentEngine, currentRecording, restorePlayhead } from './tool-context
 /**
  * `bisect` — binary-search the replay timeline for the first moment a predicate holds.
  *
- * Owner: Vicko (wrapper) over Riko's lib/bisect. Contract: docs/tools.md#4-bisect.
+ * Wraps lib/bisect. Contract: docs/tools.md#4-bisect.
  *
  * This is the tool the project exists for, and the reason it cannot be an API endpoint: the agent
  * sends a *predicate*, and the page runs a search — replaying to a different point in time on each
  * iteration and evaluating that predicate against the live DOM at each one. The agent is programming
- * the page, not querying it. There is no REST shape for "replay this recording to six different
+ * the page, not querying it. There is no REST shape for "replay this recording to ten different
  * moments and tell me where this became true", and no amount of clicking or DOM-scraping produces it
  * either.
  *
@@ -24,7 +24,7 @@ export const bisectTool: ToolDefinition = {
   description: [
     'Find the first moment in the recording when a condition became true about an element, using a',
     'binary search over the replay timeline. Use this instead of reading the DOM at many timestamps:',
-    'it takes about six replays instead of dozens, and it returns a millisecond, not a guess.',
+    'it takes about ten replays instead of dozens, and it returns a millisecond, not a guess.',
     'Typical use: locating exactly when a button became disabled, when a dropdown lost its options,',
     'or when an error message first appeared. The condition is assumed to change once and stay',
     'changed. Call read_session_meta first to learn the recording duration.',
@@ -77,7 +77,7 @@ export const bisectTool: ToolDefinition = {
   },
 
   /**
-   * Implemented — vicko, Day 3. What the wrapper is responsible for, in order:
+   * What the wrapper is responsible for, in order:
    *
    *   - `validateSelector` and `validatePredicate` first, their messages returned verbatim: they are
    *     already written for a model to act on, and rephrasing them here would produce two vocabularies

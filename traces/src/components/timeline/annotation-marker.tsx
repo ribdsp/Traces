@@ -14,8 +14,6 @@ interface AnnotationMarkerProps {
 /**
  * One labelled moment on the timeline, with the controls that keep the human in charge of it.
  *
- * Owner: Faiq.
- *
  * Two things this component is responsible for, and both are requirements rather than polish:
  *
  *   1. **Authorship is visible.** An agent's marker must never be mistaken for the human's. Colour

@@ -2,11 +2,10 @@ import { Replayer } from 'rrweb'
 import { ReplayerEvents } from '@rrweb/types'
 import type { eventWithTime } from '@rrweb/types'
 import type { Recording } from '@/types/domain'
+import { isFullSnapshotEvent } from './rrweb-events'
 
 /**
  * A thin, typed wrapper over the rrweb Replayer.
- *
- * Owner: Riko.
  *
  * Why a wrapper at all: `mirrorDocument()` is the load-bearing method of the whole project. The
  * replayed page lives in an iframe that the Replayer creates itself, which makes it same-origin and
@@ -67,6 +66,57 @@ export type ReplayEngineOptions = {
 const FIRST_SNAPSHOT_TIMEOUT_MS = 2_000
 
 /**
+ * The earliest offset rrweb can be seeked to and still rebuild the document, in recording-relative ms.
+ *
+ * rrweb applies a seek to `t` by replaying every event **strictly before** `t` synchronously and
+ * queueing the rest on a timer that `pause()` then clears (`play` in `createPlayerService`:
+ * `baselineTime = events[0].timestamp + timeOffset`, then `if (event.timestamp < baselineTime)
+ * syncEvents.push(event)`). A seek at or below the first full snapshot's own timestamp therefore
+ * replays *nothing at all* — including the snapshot that would have rebuilt the page.
+ *
+ * The iframe does not go blank when that happens, which is what makes it dangerous. rrweb rebuilds the
+ * first full snapshot from a timer in its own constructor, and a backward seek's `mirror.reset()` clears
+ * only the id-to-node map, not the document. So the iframe always holds *a* page; a seek that replays
+ * nothing simply leaves whichever moment was rendered last. The answer to `read_dom_at(0)` becomes
+ * whatever the previous tool call happened to look at.
+ *
+ * Measured in a browser against all three committed recordings (rrweb 2.0.0-alpha.18, the build in
+ * node_modules). Each seek was preceded by a seek to 2500 ms — past the first mutation, ~2040 ms in all
+ * three — so a target that rebuilds nothing leaves a visible trace. `empty-province`, whose cart shows
+ * quantities 1/2/1 at the start and 1/3/1 after the click at ~2.5 s:
+ *
+ *     asked for   body chars   quantities   rewound to the snapshot?
+ *     0 … 21      3349         1/3/1        no — still showing 2500 ms
+ *     22          3314         1/2/1        yes
+ *     30, 100     3314         1/2/1        yes
+ *
+ * The boundary is exactly the snapshot's own offset: stale through 21 for `empty-province` (snapshot at
+ * 21 ms), through 17 for `race-condition` (17 ms), through 20 for `overlay-blocks-button` (20 ms), and
+ * correct from one millisecond later in each. Which is where `+ 1` comes from — the bound is exclusive,
+ * so seeking to exactly 21 still leaves `21 < 21` false.
+ *
+ * rrweb emits the Meta event at offset 0 and the full snapshot a beat later, once it has walked the
+ * document, so that window is 17-21 ms wide rather than zero. `read_dom_at(0)`, `diff_dom(from: 0)` and
+ * `bisect(from: 0)` all land inside it — the natural first call of all three, and the default the tool
+ * schemas encourage. Unclamped, the first one is right by luck (the constructor's rebuild *is* the state
+ * at time 0) and every later one reports a stale page as the beginning of the session. Confidently
+ * wrong, and not even reproducibly wrong, which is the shape this project exists to avoid.
+ *
+ * The clamp only ever moves a seek that would otherwise land before the recording's first frame, and
+ * there is nothing else it could honestly return: no DOM was recorded before that snapshot, and the
+ * snapshot is what rrweb's own player shows at time 0. What it does not do is nudge a seek that is
+ * already answerable — the deliberate non-workaround for the checkout gap in `gotoTime` stands.
+ */
+export function earliestSeekableMs(recording: Recording): number {
+  const snapshot = recording.events.find(isFullSnapshotEvent)
+  // `loadRecording` rejects a recording with no full snapshot, so this is unreachable through the app.
+  // Returning 0 rather than throwing keeps the failure where it belongs: `waitForFirstSnapshot`, which
+  // already explains an iframe that never rebuilt.
+  if (snapshot === undefined) return 0
+  return snapshot.timestamp - recording.startedAt + 1
+}
+
+/**
  * Builds the Replayer, mounted into `mount`, and wraps it as a `ReplayEngine`.
  *
  * `recording.events` is typed as the structural minimum `RrwebEvent` (see types/domain.ts) precisely
@@ -92,6 +142,9 @@ export function createReplayEngine(options: ReplayEngineOptions): ReplayEngine {
     skipInactive: false,
     mouseTail: false,
   })
+
+  /** Computed once: it is a property of the recording, and `gotoTime` is on the hot path of `bisect`. */
+  const earliest = earliestSeekableMs(recording)
 
   /**
    * Whether the Replayer has finished putting its first full snapshot into the iframe.
@@ -271,12 +324,18 @@ export function createReplayEngine(options: ReplayEngineOptions): ReplayEngine {
    * Still `async` on purpose — and now load-bearingly so rather than only defensively. The signature is
    * a published seam that the tools already `await`, and `Replayer` is an alpha whose seek semantics are
    * exactly the sort of thing that changes under a patch bump.
+   *
+   * **A seek at or below the first full snapshot rebuilds nothing, so it is clamped.** It leaves the
+   * iframe on whichever moment was rendered last, which makes `read_dom_at(0)` answer with the previous
+   * tool call's page. See `earliestSeekableMs` for the measurements, and for why this one nudge is not
+   * the same thing as the checkout workaround refused above.
    */
   async function gotoTime(atMs: number): Promise<void> {
     await waitForFirstSnapshot()
+    const target = Math.max(atMs, earliest)
     replayer.pause()
-    replayer.play(atMs)
-    replayer.pause(atMs)
+    replayer.play(target)
+    replayer.pause(target)
     hasSeeked = true
   }
 

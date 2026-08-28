@@ -6,7 +6,7 @@ import { currentRecording, optionalWindow } from './tool-context'
 /**
  * 'list_events' — see docs/tools.md#2-list_events for the full contract.
  *
- * Owner: Vicko, over Riko's lib/replay/event-digest. Implemented — vicko, Day 3.
+ * Wraps lib/replay/event-digest.
  *
  * Two things this wrapper is responsible for beyond calling the digest:
  *

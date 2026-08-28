@@ -4,8 +4,6 @@ import { buildEventDigest } from '@/lib/replay/event-digest'
 /**
  * Reconstruct a bug report from what was actually recorded.
  *
- * Owner: Riko.
- *
  * The one rule that makes this worth building rather than asking the model to write prose: **every
  * reproduction step is validated against the event stream**, and a step with no supporting event is
  * marked `verified: false` rather than dropped.
@@ -16,7 +14,7 @@ import { buildEventDigest } from '@/lib/replay/event-digest'
  * unverified tells the engineer exactly where to look. Fabricated steps are the failure mode most
  * likely to make a human distrust the whole tool, and the only defence is admitting the gap.
  *
- * Implemented — riko, Day 5. What shipped, and the decisions behind it — each is also called out
+ * What shipped, and the decisions behind it — each is also called out
  * inline, next to the code that makes it:
  *   - `proposed.steps` (when present) are checked against the recording's own event digest, one at a
  *     time, and re-emitted with a recomputed `verified` — see `reconcileStep`. The caller's own
@@ -170,7 +168,13 @@ function synthesizeStepsFromDigest(events: DigestEvent[]): ReportStep[] {
 }
 
 export function buildReport(recording: Recording, proposed: Partial<Report>): Report {
-  const { events } = buildEventDigest(recording)
+  // Unbounded on purpose. `buildEventDigest`'s default `DIGEST_LIMIT` keeps the *earliest* 40 events,
+  // which is the right shape for `list_events` — a page of a browsable list — and the wrong one here.
+  // A report is built from the whole session: truncating would make `reconcileStep` reject a step that
+  // cites a real event past the cap as unverified, and would cut `synthesizeStepsFromDigest` off at
+  // whatever happened in the first few seconds. There is no cap to apply afterwards either, because
+  // `STEP_EVENT_KINDS` filters below and the interesting events in these recordings are the late ones.
+  const { events } = buildEventDigest(recording, { limit: Number.MAX_SAFE_INTEGER })
   const stepWorthyEvents = events.filter((event) => STEP_EVENT_KINDS.includes(event.kind))
 
   const steps =

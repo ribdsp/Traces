@@ -14,8 +14,6 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
 /**
  * Play, pause, speed, and the current position.
  *
- * Owner: Faiq.
- *
  * The one non-obvious requirement: the playhead position shown here is the *store's* `currentTime`,
  * not the Replayer's. Both a human dragging the scrubber and the agent calling `seek` write to the
  * store, so reading from the store is what makes an agent-driven seek visible in the UI at all. Read
@@ -27,7 +25,7 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  * Nothing here touches the Replayer either. Every control writes `setCurrentTime(_, 'human')` and the
  * frame follows through `usePlayheadSync`, which is what keeps one clock authoritative instead of two.
  *
- * Implemented — faiq, Day 2:
+ * What shipped, and why:
  *   - play/pause and 0.5× / 1× / 2×, held in local state by `usePlayback` — neither is the agent's
  *     business, and `SessionState` is frozen
  *   - a scrubber writing through `setCurrentTime(atMs, 'human')`, quantised to the arrow-key step so a

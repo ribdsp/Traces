@@ -8,8 +8,6 @@ import { currentEngine, currentRecording, documentAt, oneLine, optionalNumber, o
 /**
  * 'find_element' — see docs/tools.md#3-find_element for the full contract.
  *
- * Owner: Vicko. Implemented — vicko, Day 3.
- *
  * **This tool has no pure-lib backing, and that is a gap in the file plan rather than a design
  * choice.** Everything below `execute` — the selector strategy especially — is logic that belongs in
  * `lib/dom/find-element.ts` with its own tests, next to `compress-dom` and `diff-dom` which already

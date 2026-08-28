@@ -8,8 +8,6 @@ interface AuthorBadgeProps {
 /**
  * Who did this — the smallest component in the project and one of the most load-bearing.
  *
- * Owner: Faiq.
- *
  * The challenge asks for the agent to have an identity distinguishable from the human's. Every marker,
  * hypothesis, activity line and report shows this badge, which is why it exists as a component instead
  * of as a colour repeated in twelve places: the day someone decides agent contributions should read

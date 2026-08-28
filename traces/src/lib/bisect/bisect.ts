@@ -1,6 +1,6 @@
 import type { BisectResult, BisectStep } from '@/types/domain'
 
-/** Default precision. Fine enough to name a moment, coarse enough to finish in about six probes. */
+/** Default precision. Fine enough to name a moment, coarse enough to finish in ten probes. */
 export const DEFAULT_PRECISION_MS = 250
 
 /**
@@ -104,12 +104,14 @@ function finalize(
 /**
  * Binary-search the replay timeline for the first moment a predicate holds.
  *
- * Owner: Riko. Contract: docs/tools.md#4-bisect.
+ * Contract: docs/tools.md#4-bisect.
  *
  * This is the idea the project is built on. The agent doesn't fetch a value; it sends a predicate and
- * the page runs a search, replaying to a different point in time on each iteration. Six probes over a
- * 47-second recording locates a state change to within 250 ms — and because each probe restarts from
- * the nearest checkpoint rather than from zero, it takes about a second rather than about ten.
+ * the page runs a search, replaying to a different point in time on each iteration. Ten probes over a
+ * 47-second recording locates a state change to within 250 ms — eight halvings plus the two boundary
+ * probes, and ten wherever the transition happens to sit, since a binary search costs the same
+ * everywhere. Because each probe restarts from the nearest checkpoint rather than from zero, that
+ * takes about a second rather than about ten.
  *
  * The predicate is assumed monotonic: false, then true, and not back again. That assumption is the
  * reason the two flags below exist, and both matter more than they look:

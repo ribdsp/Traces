@@ -3,8 +3,6 @@ import type { ToolDefinition, ToolResponse } from './tool-types'
 /**
  * A minimal stand-in for `document.modelContext` when the origin trial isn't available.
  *
- * Owner: Vicko.
- *
  * Good enough to build against; **not** good enough to judge a schema by. A polyfill will happily
  * accept a description that a real model misreads, so a tool is not "working" until it has been
  * called by an actual agent — see CONTRIBUTING.md, "Testing a tool".

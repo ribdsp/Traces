@@ -1,8 +1,6 @@
 /**
  * How a recording time is written on the timeline — ticks, marker labels, bisect probes.
  *
- * Owner: Faiq.
- *
  * One decimal, always, and always seconds. The reason it is a shared function rather than a `.toFixed`
  * at each call site: a human's most common act in this app is checking an agent's claimed timestamp
  * against the timeline, and that comparison is meaningless if the marker says `28.4s` and the tick above

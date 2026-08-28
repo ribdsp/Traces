@@ -17,7 +17,7 @@ import type {
 /**
  * The single state store.
  *
- * Owner: Vicko. Shape frozen in types/domain.ts as the contract Faiq's components read.
+ * Shape frozen in types/domain.ts as the contract the components read.
  *
  * Why zustand rather than Context plus useReducer, since this comes up in review every time:
  * `execute()` inside a WebMCP tool **is not a React component**. The browser calls it from outside

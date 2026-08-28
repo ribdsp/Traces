@@ -9,8 +9,6 @@ import type { ActivityEntry } from '@/types/domain'
 /**
  * A running account of who did what.
  *
- * Owner: Faiq.
- *
  * The feed is correct for free if the store's rules hold: every mutation goes through an action, and
  * every action appends one entry carrying its `author`. If an entry is ever missing here, the bug is
  * in the store — something wrote state directly — and this component is the place it becomes visible.
@@ -19,7 +17,7 @@ import type { ActivityEntry } from '@/types/domain'
  * Newest first, and undo lives on the entry rather than in a global "undo last" button. The human's
  * veto is per-contribution: reject the agent's third marker without touching the other two.
  *
- * Implemented — faiq, Day 4:
+ * What shipped, and why:
  *   - newest first, and the list scrolls itself to the top only when it was already there. Reading history
  *     while an agent works is the case that matters: `[overflow-anchor:none]` plus a scroll correction keeps
  *     the same lines under the eye in every browser, rather than depending on native scroll anchoring, which
@@ -92,8 +90,8 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
 
       <span className="ml-auto flex shrink-0 items-baseline gap-1.5 pl-1">
         {/*
-          Absolute time until the clock starts, so the first paint of a static export is not a wall-clock
-          read the server could not have made.
+          Absolute time until the clock starts, so the prerendered first paint is not a wall-clock read
+          the build could not have made.
         */}
         <span
           className="font-mono text-[10px] text-zinc-600"

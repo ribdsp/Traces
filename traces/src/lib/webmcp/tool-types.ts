@@ -1,8 +1,6 @@
 /**
  * Shared shapes and response helpers for the tool surface.
  *
- * Owner: Vicko.
- *
  * The single most consequential fact about WebMCP tool responses: `content` accepts `"text"` and, as
  * of the current draft, nothing else. An `"image"` content type is an open question. That is not a
  * detail — it is the constraint that produced the agent-legible DOM compressor and

@@ -190,7 +190,7 @@ function compareAttributes(selector: string, before: Entry, after: Entry, into: 
  * `document.cloneNode(true)` is the clone that works, and it is the only one that does: `importNode`
  * refuses a document node outright (`NotSupportedError`, measured, in both realms). The deep clone
  * carries `<option>` children and live `.value` properties across — verified: six options and
- * `value="Riko Pradana"` on the clone, still six after the Replayer seeked the live document down to
+ * a live input `value` on the clone, still six after the Replayer seeked the live document down to
  * zero — and the clone is inert, because nothing reflows a detached document.
  */
 function assertDistinctDocuments(before: DomSnapshot, after: DomSnapshot): void {
@@ -205,8 +205,6 @@ function assertDistinctDocuments(before: DomSnapshot, after: DomSnapshot): void 
 
 /**
  * What changed between two moments, as a short list.
- *
- * Owner: Riko.
  *
  * Compare two *compressed* trees, not two raw ones. A raw diff of a React app is mostly reordered
  * class strings and regenerated ids — technically accurate, useless to a model, and expensive. Both

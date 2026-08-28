@@ -17,9 +17,7 @@ import {
 /**
  * 'propose_report' — see docs/tools.md for the full contract.
  *
- * Owner: Vicko.
- *
- * Implemented — vicko, Day 5:
+ * What shipped, and why:
  *   - the draft goes through `buildReport` (lib/report) **before** anyone sees it. Steps are not
  *     validated here and must not be: that function checks every step against the real event stream and
  *     marks the unsupported ones `verified: false`, and a second opinion in this file could only

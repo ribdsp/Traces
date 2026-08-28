@@ -8,7 +8,7 @@ import type { Hypothesis, HypothesisStatus } from '@/types/domain'
 /**
  * The agent's ranked explanations, waiting on a human's judgement.
  *
- * Owner: Faiq. Pairs with `propose_hypotheses`, which blocks until one is promoted or rejected.
+ * Pairs with `propose_hypotheses`, which blocks until one is promoted or rejected.
  *
  * The tool call is suspended while these cards are on screen. That is the point of the interaction —
  * the agent has done the work it can do and is now asking a person to decide — and it means the cards
@@ -19,7 +19,7 @@ import type { Hypothesis, HypothesisStatus } from '@/types/domain'
  * all of them at once on the timeline. Checking a claim should cost one click, because that is the
  * habit worth building in whoever is watching.
  *
- * Implemented — faiq, Day 4:
+ * What shipped, and why:
  *   - the agent's own order, numbered 1..n, because the ranking is part of what it said — and because the
  *     store's feed lines say "promoted hypothesis 2", which is only true if 2 is what the screen calls it
  *   - confidence as a bar. Never a percentage: the number is the agent's claim about its own reasoning, and

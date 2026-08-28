@@ -86,8 +86,6 @@ function collapseRageClicks(clicks: ClickCandidate[]): DigestEvent[] {
 /**
  * Reduce thousands of rrweb events to the short list worth an agent's attention.
  *
- * Owner: Riko.
- *
  * Keeps clicks (rage-clicks collapsed, see `collapseRageClicks`), inputs (length only — see
  * docs/threat-model.md T4, values are never echoed), navigations, console errors/warnings, and failed
  * requests; drops everything else (mouse movement, scroll, plain mutations) as noise at this level.

@@ -8,7 +8,7 @@ import { noRecording, requireNumber, toolError, type ToolResponse } from '../too
  * argument into a validated recording-relative time, and position the replay so the mirror document
  * can be read.
  *
- * Owner: Vicko. It lives here rather than in `lib/` on purpose — none of it is logic, all of it is
+ * It lives here rather than in `lib/` on purpose — none of it is logic, all of it is
  * *argument handling and failure phrasing at the WebMCP boundary*, which is the one thing a tool
  * wrapper is allowed to own. `lib/` stays free of the store, the engine handle and `ToolResponse`.
  *

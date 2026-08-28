@@ -6,9 +6,7 @@ import { capList, capText, optionalString } from './tool-support'
 /**
  * 'snapshot_finding' — see docs/tools.md for the full contract.
  *
- * Owner: Vicko.
- *
- * Implemented — vicko, Day 5:
+ * What shipped, and why:
  *   - markers, hypotheses and the report draft serialised to localStorage under one key, so a reload
  *     does not lose an investigation and the human can copy the JSON out
  *   - a real budget (below) with a readable error on every rejection path: no storage available, quota

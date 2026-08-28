@@ -15,9 +15,7 @@ import {
 /**
  * 'propose_hypotheses' — see docs/tools.md for the full contract.
  *
- * Owner: Vicko.
- *
- * Implemented — vicko, Day 4:
+ * What shipped, and why:
  *   - `HYPOTHESES_MIN`..`HYPOTHESES_MAX` cards, each with at least one piece of evidence the recording
  *     actually covers. A hypothesis with no evidence is rejected, and that rule is the tool: clicking a
  *     card is supposed to highlight everything supporting it at once, and a card with nothing behind it

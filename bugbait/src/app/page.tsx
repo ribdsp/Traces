@@ -8,8 +8,6 @@ import { RecorderPanel } from '@/components/recorder-panel'
 /**
  * The cart. The recording starts here.
  *
- * Owner: Vicko.
- *
  * It exists so the session has a beginning that isn't the broken page. An agent investigating a
  * checkout failure benefits from a recording that includes the navigation into checkout — that
  * navigation is in `read_session_meta`, and "the bug appeared 4s after entering /checkout" is a much
@@ -18,7 +16,7 @@ import { RecorderPanel } from '@/components/recorder-panel'
  * Keep the interaction here small and natural: adjust a quantity, then continue. Enough to make the
  * session look like a real one, not so much that the demo video spends its first ten seconds shopping.
  *
- * Day 5 (vicko) — implemented. Two things about it that are less obvious than they look:
+ * Two things about it that are less obvious than they look:
  *
  *   - the "Continue to checkout" link carries **no** `?bug=` parameter. The scenario is armed once, on
  *     arrival, and then lives in `sessionStorage` (see `armScenario`), because a query parameter would

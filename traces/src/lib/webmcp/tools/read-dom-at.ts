@@ -6,7 +6,7 @@ import { currentEngine, currentRecording, documentAt, optionalString, requireTim
 /**
  * 'read_dom_at' — see docs/tools.md#5-read_dom_at for the full contract.
  *
- * Owner: Vicko, over Riko's lib/dom/compress-dom. Implemented — vicko, Day 3.
+ * Wraps lib/dom/compress-dom.
  *
  * Returned as plain text rather than JSON, matching docs §5. The compressed DOM is already a
  * newline-indented format designed to be read by a model; wrapping it in JSON would escape every

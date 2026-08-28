@@ -10,7 +10,7 @@ import { useSessionStore } from '@/lib/store/session'
 /**
  * The panel-side view of a question the agent cannot answer alone.
  *
- * Owner: Faiq. The clickable half lives in MarkPointOverlay, on the player.
+ * The clickable half lives in MarkPointOverlay, on the player.
  *
  * Split deliberately: the *question* belongs in the agent panel with everything else the agent said,
  * and the *answer* is given on the player, because the answer includes where the human clicked. One
@@ -20,7 +20,7 @@ import { useSessionStore } from '@/lib/store/session'
  * When a question is pending, this is the most important thing on screen. Say what is being asked and
  * that the agent is waiting; a quiet card gets missed and the gate times out for no reason.
  *
- * Implemented — faiq, Day 4:
+ * What shipped, and why:
  *   - the question, that the agent is waiting, how long it has been waiting, and that the answer is given
  *     on the player — naming `hintAtMs` when the agent suggested somewhere to look
  *   - past `GATE_TIMEOUT_MS` the card says the first call has already returned a ticket and that answering

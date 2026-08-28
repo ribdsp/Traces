@@ -5,8 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 /**
  * The two-panel split, with a divider a human can move.
  *
- * Owner: Faiq.
- *
  * There is exactly one split in this app, which is why this renders `section` and `aside` rather than
  * two anonymous divs: the replay is the content, the agent's lane is beside it, and that reading should
  * survive being handed to a screen reader.

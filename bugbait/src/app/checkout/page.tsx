@@ -15,8 +15,6 @@ import { RecorderPanel } from '@/components/recorder-panel'
 /**
  * The checkout form. Every bug lives here.
  *
- * Owner: Vicko.
- *
  * The form has to be genuinely ordinary — name, address, province, city, postcode, card, pay — because
  * the investigation is only interesting if the page looks like something that would ship. A page with
  * one dropdown and a broken button demonstrates nothing; the agent has to actually find the failing
@@ -34,7 +32,7 @@ import { RecorderPanel } from '@/components/recorder-panel'
  *      rendered markup. The recording captures the DOM; anything written there hands the agent the
  *      answer and makes the demo a re-enactment.
  *
- * Day 5 (vicko) — implemented. Three notes on how each bug is kept invisible in the finished DOM,
+ * Three notes on how each bug is kept invisible in the finished DOM,
  * because that property is the argument of the whole project and the easiest thing to break by accident:
  *
  *   - **empty-province.** `/api/provinces` is requested the moment this page mounts and resolves 1.5s

@@ -3,13 +3,13 @@ import type { LayoutBox, LayoutResult } from '@/types/domain'
 /**
  * Geometry and stacking of specific elements at a moment in time.
  *
- * Owner: Riko. On the cut line (PLAN §4, item 2) — losing it costs the `overlay` bug class only.
+ * On the cut line (PLAN §4, item 2) — losing it costs the `overlay` bug class only.
  *
  * The interesting part is `overlaps`: "is an invisible element covering the button" is normally a
  * question only eyes can settle, and this turns it into arithmetic on two rectangles. It is the one
  * visual bug class an agent can diagnose without asking a human to look.
  *
- * Implemented — riko, Day 6. What shipped, and the decisions behind it. Each is also called out
+ * What shipped, and the decisions behind it. Each is also called out
  * inline, next to the code that makes it, because a decision explained only up here goes stale the
  * first time someone edits the code below without reading this far:
  *   - getBoundingClientRect plus getComputedStyle for visibility, display, zIndex — see

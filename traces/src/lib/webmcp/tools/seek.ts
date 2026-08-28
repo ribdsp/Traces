@@ -6,14 +6,12 @@ import { clampToRecording, optionalNumber } from './tool-support'
 /**
  * 'seek' — see docs/tools.md for the full contract.
  *
- * Owner: Vicko.
- *
  * The only tool whose effect is purely on human attention. Nothing is retrieved: the agent is pointing
  * at evidence and saying *look here*, which is why it writes to both the replay engine and the store.
  * The engine moves the pixels; the store moves the playhead the UI renders and is what makes an
  * agent-driven seek visible at all (see the note in components/player/player-controls.tsx).
  *
- * Implemented — vicko, Day 3:
+ * What shipped, and why:
  *   - `setCurrentTime(atMs, 'agent')` plus `engine.gotoTime`, and the response reports the position
  *     actually reached rather than the one that was asked for
  *   - `getActiveEngine()` is null until ReplayStage mounts, which is a readable "not ready, retry",

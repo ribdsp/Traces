@@ -194,13 +194,15 @@ output: { firstTrue: number|null, lastFalse: number|null,
 ```
 
 The agent sends a **predicate**. The page runs a binary search: it replays to a midpoint, evaluates
-the predicate against the reconstructed DOM, and repeats. About six iterations gets 250 ms precision
-on a 47-second recording, and because each probe restarts from the nearest checkpoint rather than
-from zero it costs about a second rather than about ten.
+the predicate against the reconstructed DOM, and repeats. Ten iterations gets 250 ms precision on a
+47-second recording — eight halvings plus the two boundary probes — and because each probe restarts
+from the nearest checkpoint rather than from zero it costs about a second rather than about ten. Ten is
+also the count wherever the transition sits: a binary search pays the same price everywhere, so the
+number is a property of the window and the precision, not of the bug.
 
 This is the part that cannot be a REST endpoint. The agent is not fetching data — it is asking the
 page to *run a computation over time* that only a live replay engine can perform. There is no HTTP
-shape for "replay this recording to six different moments and tell me where this became true", and no
+shape for "replay this recording to ten different moments and tell me where this became true", and no
 amount of DOM-scraping produces it either.
 
 **Contract details an agent needs:**

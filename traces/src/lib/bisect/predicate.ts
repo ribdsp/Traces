@@ -3,7 +3,7 @@ import type { Predicate, PredicateKind } from '@/types/domain'
 /**
  * The security boundary of Traces.
  *
- * Owner: Riko. Contract: docs/tools.md#predicates. Threats: docs/threat-model.md (T1, T2).
+ * Contract: docs/tools.md#predicates. Threats: docs/threat-model.md (T1, T2).
  *
  * A predicate arrives from a language model, so it is untrusted input in the strongest sense: it may
  * be malformed, it may be adversarial, and it may be a confident attempt to smuggle in an

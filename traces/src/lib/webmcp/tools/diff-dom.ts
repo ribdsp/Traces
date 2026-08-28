@@ -5,9 +5,9 @@ import { currentEngine, currentRecording, documentAt, requireTimestamp, restoreP
 /**
  * 'diff_dom' — see docs/tools.md#6-diff_dom for the full contract.
  *
- * Owner: Vicko, over Riko's lib/dom/diff-dom.
+ * Wraps lib/dom/diff-dom.
  *
- * Implemented — vicko, Day 5. The whole difficulty of this wrapper is that a diff needs two documents
+ * The whole difficulty of this wrapper is that a diff needs two documents
  * and there is exactly one Replayer, which mutates its single iframe document in place on every seek.
  * Hold a reference at 1,400 ms, seek to 2,600 ms, and both references show 2,600 ms — so the naive
  * implementation returns *zero changes*, confidently, for a window in which six options vanished. That

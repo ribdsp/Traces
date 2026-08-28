@@ -3,8 +3,6 @@ import type { Config } from 'tailwindcss'
 /**
  * Traces is an instrument, not a landing page. The palette is deliberately narrow and dark, and the
  * type scale is small — see the UI conventions in CONTRIBUTING.md before adding anything here.
- *
- * Owner: Faiq.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -33,9 +31,11 @@ const config: Config = {
         ok: '#3ecf8e',
       },
       fontFamily: {
-        // Placeholder. Faiq picks the real pair on Day 6; system-ui as "the design" is banned.
-        sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // IBM Plex Sans and Plex Mono, one superfamily so the two can share a line without a step in
+        // it. Declared in src/app/fonts.ts, which is where the reasoning lives; these are the CSS
+        // variables next/font defines, with the platform stack behind them for the swap window.
+        sans: ['var(--font-plex-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-plex-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         // Dense by default.
