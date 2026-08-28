@@ -7,13 +7,11 @@ import {
   type SampleRecording,
 } from '@/components/ui/sample-recordings'
 import { buildCheckpointIndex } from '@/lib/replay/checkpoint-index'
-import { loadRecording as parseRecording } from '@/lib/replay/load-recording'
+import { loadRecordingFile } from '@/lib/replay/load-recording-file'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 
 /**
  * Loads a sample recording. The only control on the page that has to work before anything else does.
- *
- * Owner: Faiq.
  *
  * All three states are real here, and none of them is theoretical:
  *
@@ -49,8 +47,11 @@ export function RecordingPicker() {
         throw new Error(`${url} — HTTP ${response.status} ${response.statusText}`.trim())
       }
 
-      const raw: unknown = await response.json()
-      const recording = parseRecording(sample.id, sample.label, raw)
+      const file: unknown = await response.json()
+      // `loadRecordingFile`, not `loadRecording`: the file on disk is the `{ id, label, events, … }`
+      // wrapper the recorder writes, and it owns knowing that. `id` and `label` come from
+      // `SAMPLE_RECORDINGS` so the file cannot relabel the UI on load.
+      const recording = loadRecordingFile(sample.id, sample.label, file)
       const checkpoints = buildCheckpointIndex(recording.events, recording.startedAt)
 
       sessionActions().loadRecording(recording, checkpoints)
