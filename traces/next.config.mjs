@@ -10,8 +10,8 @@ import { fileURLToPath } from 'node:url'
  * about an hour before you find it.
  *
  * The token is bound to an origin, so localhost and production need different ones. Put yours in
- * `.env.local` (see `.env.example`). With no token set, no header is sent and the polyfill in
- * `src/lib/webmcp/polyfill.ts` takes over.
+ * `.env.local` (see `.env.example`). With no token set, no *trial* header is sent and the polyfill in
+ * `src/lib/webmcp/polyfill.ts` takes over — `Origin-Agent-Cluster` ships either way, see `headers()`.
  *
  * **Do not add `output: 'export'`.** Every page here is prerendered anyway — `next build` reports `/` as
  * `○ (Static)` — so a static export looks like a free simplification, and it is the one change that
@@ -34,13 +34,23 @@ const nextConfig = {
   outputFileTracingRoot: fileURLToPath(new URL('.', import.meta.url)),
 
   async headers() {
+    /*
+     * Origin isolation is not optional, and it is not part of the trial: WebMCP refuses to register a
+     * tool unless the document is origin-isolated, so this header ships whether or not a token is
+     * configured. Sending only `Origin-Trial` produces the worst available failure — `document
+     * .modelContext` exists, so the banner reports `native` in green, while all sixteen
+     * `registerTool` calls throw and `registerTools` returns an empty array. The page looks healthy
+     * and nothing on it is agent-callable.
+     *
+     * `?0` is not a weaker version of this, it is the opposite: it opts the document out.
+     */
+    const isolation = { key: 'Origin-Agent-Cluster', value: '?1' }
     const token = process.env.NEXT_PUBLIC_WEBMCP_ORIGIN_TRIAL_TOKEN
-    if (!token) return []
 
     return [
       {
         source: '/:path*',
-        headers: [{ key: 'Origin-Trial', value: token }],
+        headers: token ? [isolation, { key: 'Origin-Trial', value: token }] : [isolation],
       },
     ]
   },
