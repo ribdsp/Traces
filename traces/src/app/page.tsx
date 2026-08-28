@@ -1,5 +1,6 @@
 'use client'
 
+import { Keyboard } from 'lucide-react'
 import { useEffect } from 'react'
 import { AgentLane, AGENT_LANE_INPUT_ID } from '@/components/agent/agent-lane'
 import { ActivityFeed } from '@/components/agent/activity-feed'
@@ -25,6 +26,11 @@ import { ResizableSplit } from '@/components/ui/resizable-split'
  * comes from flexing against the layout rather than from subtracting the banner's height, because that
  * banner is one line when healthy and several when it has something to report.
  *
+ * The frame is what must not scroll — a *panel* may, and two do: the agent column, and the empty state on
+ * the stage. That distinction matters more than the 1280×720 the rule was written for, because this is
+ * also judged in the ChatGPT desktop in-app browser, whose window is whatever width the user left it.
+ * Verified at 720, 900, 1100 and 1440.
+ *
  * MarkPointOverlay is no longer mounted here: it belongs to the stage it dims, and mounting it in both
  * places would have rendered the question twice the day `pendingAsk` first got set.
  *
@@ -35,8 +41,9 @@ import { ResizableSplit } from '@/components/ui/resizable-split'
  *   - `esc` releases focus from whatever is being typed in, which is the shortcut that makes the other two
  *     safe to use. Space plays only while nothing has the keyboard, so without a way back out, the first
  *     `a` costs the player its controls until someone clicks the stage.
- *   - the keys are listed in the header rather than hidden in a help dialog. Five of them fit in the space
- *     the description was already truncating, and a shortcut nobody is told about is one nobody presses.
+ *   - the keys are listed in the header rather than hidden in a help dialog, because a shortcut nobody is
+ *     told about is one nobody presses. Below `lg` there is no room to list five of them, so they collapse
+ *     into a disclosure rather than disappearing — see `ShortcutLegend`.
  */
 
 /** Bound below and listed in the header, so the legend cannot drift from what is actually handled. */
@@ -53,6 +60,10 @@ const LEGEND = [
   { keys: FOCUS_KEYS.player, does: 'player' },
   { keys: 'esc', does: 'release' },
 ] as const
+
+/** Shared by both renderings of the legend, so the prose and the disclosure cannot disagree. */
+const LEGEND_TITLE =
+  'Keyboard: space plays and pauses, the arrows step 100ms (hold shift for a second), a focuses the agent lane, p focuses the scrubber, and escape hands the keyboard back to the player.'
 
 /**
  * Whether a keystroke is part of something being written.
@@ -108,12 +119,17 @@ export default function Home() {
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
-      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 px-3 py-1.5">
+      <header className="relative flex shrink-0 items-start justify-between gap-3 border-b border-line px-3 py-1.5">
         <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="shrink-0 text-xs font-medium tracking-tight text-zinc-100">Traces</h1>
-          <p className="truncate text-[11px] text-zinc-500">
-            Session replay an AI agent can interrogate — it reads the DOM at any moment, binary-searches
-            the timeline, and asks you to look when it cannot see.
+          <h1 className="shrink-0 text-xs font-medium tracking-tight text-ink">Traces</h1>
+          {/*
+            Short enough to sit at 900px without truncating, and hidden below `md` rather than clipped.
+            The sentence that used to be here — the one that explained what interrogating a replay means —
+            moved to `StageEmptyState`, where it has room and where it is actually wanted. `truncate` stays
+            as a guard so a future edit to this string cannot push the picker off the right edge.
+          */}
+          <p className="hidden truncate text-[11px] text-muted md:block">
+            agent-interrogable session replay
           </p>
         </div>
 
@@ -151,23 +167,61 @@ export default function Home() {
 /**
  * The keys, in the header.
  *
- * Hidden below `lg` rather than wrapped: it is a convenience for a keyboard, and the layout it would push
- * around is the one thing on this page that must not start scrolling.
+ * Two renderings of one `LEGEND`, because the narrow case is the common case: this is judged in the
+ * ChatGPT desktop in-app browser, which is a window of arbitrary width, and the legend used to be
+ * `hidden lg:flex` — so on the screen it most needed to teach, it taught nothing at all. Below `lg` it
+ * collapses to a disclosure instead of vanishing.
+ *
+ * `<details>` rather than a button with state: it is keyboard-reachable and toggleable with no JavaScript
+ * and no focus management, and the panel is absolutely positioned so opening it cannot push the layout —
+ * which is the one thing this page must not do.
  */
 function ShortcutLegend() {
   return (
-    <ul
-      title="Keyboard: space plays and pauses, the arrows step 100ms (hold shift for a second), a focuses the agent lane, p focuses the scrubber, and escape hands the keyboard back to the player."
-      className="hidden shrink-0 items-center gap-2 pt-0.5 text-[10px] text-zinc-600 lg:flex"
-    >
-      {LEGEND.map((item) => (
-        <li key={item.keys} className="flex items-center gap-1">
-          <kbd className="border border-zinc-800 px-1 font-mono text-[9px] text-zinc-400">
-            {item.keys}
-          </kbd>
-          <span>{item.does}</span>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul
+        title={LEGEND_TITLE}
+        className="hidden shrink-0 items-center gap-2 pt-0.5 text-[10px] text-faint lg:flex"
+      >
+        {LEGEND.map((item) => (
+          <li key={item.keys} className="flex items-center gap-1">
+            <LegendKey keys={item.keys} />
+            <span>{item.does}</span>
+          </li>
+        ))}
+      </ul>
+
+      <details className="relative shrink-0 lg:hidden">
+        <summary
+          title={LEGEND_TITLE}
+          className="flex cursor-pointer list-none items-center gap-1 border border-line px-1 py-0.5 text-[10px] text-muted marker:content-none hover:border-faint hover:text-ink focus-visible:border-ink focus-visible:text-ink focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+        >
+          {/*
+            Names the control rather than decorating a heading: collapsed, this is one word in a crowded
+            header, and the glyph is what makes it findable at a glance. The word beside it is still the
+            accessible name, so the icon stays hidden from assistive tech.
+          */}
+          <Keyboard aria-hidden size={12} strokeWidth={1.5} />
+          keys
+        </summary>
+
+        {/*
+          `raised` rather than a heavier border to lift the popover off the header. Drop shadows are out,
+          so elevation here is carried by the surface token that exists for it.
+        */}
+        <ul className="absolute right-0 top-[calc(100%+3px)] z-20 w-max space-y-1 border border-line bg-raised px-2 py-1.5 text-[10px] text-muted">
+          {LEGEND.map((item) => (
+            <li key={item.keys} className="flex items-center gap-1.5">
+              <LegendKey keys={item.keys} />
+              <span>{item.does}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </>
   )
+}
+
+function LegendKey({ keys }: { keys: string }) {
+  return <kbd className="border border-line px-1 font-mono text-[9px] text-muted">{keys}</kbd>
 }

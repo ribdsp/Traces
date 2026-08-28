@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatAgo, useWallClock } from '@/components/ui/use-clock'
+import { SectionHeading } from '@/components/ui/section-heading'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 import type { ActivityEntry } from '@/types/domain'
 
@@ -58,13 +59,17 @@ export function ActivityFeed() {
   }, [activity])
 
   return (
-    <section className="flex min-h-[8rem] flex-1 flex-col p-3">
-      <div className="mb-2 flex shrink-0 items-baseline justify-between gap-2">
-        <h2 className="text-[11px] uppercase tracking-wide text-zinc-500">Activity</h2>
+    /*
+      `panel` rather than the column's `base`. This is the only section that is a *record* rather than
+      something to act on, and after four hairline-separated slabs another hairline says nothing. A change
+      of ground does: everything above it is open work, everything on this surface already happened.
+    */
+    <section className="flex min-h-[8rem] flex-1 flex-col bg-panel p-3">
+      <SectionHeading rank="record" label="Activity">
         {activity.length > 0 ? (
-          <span className="font-mono text-[10px] text-zinc-600">{activity.length}</span>
+          <span className="ml-auto font-mono text-[10px] text-faint">{activity.length}</span>
         ) : null}
-      </div>
+      </SectionHeading>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto [overflow-anchor:none]">
         {activity.length === 0 ? (
@@ -84,7 +89,7 @@ export function ActivityFeed() {
 
 function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
   return (
-    <li className="flex items-baseline gap-1 text-xs leading-relaxed text-zinc-400">
+    <li className="flex items-baseline gap-1 text-xs leading-relaxed text-muted">
       <span className="min-w-0">{entry.description}</span>
       <AuthorBadge author={entry.author} />
 
@@ -94,7 +99,7 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
           the build could not have made.
         */}
         <span
-          className="font-mono text-[10px] text-zinc-600"
+          className="font-mono text-[10px] text-faint"
           title={new Date(entry.at).toLocaleTimeString()}
         >
           {now === null ? '' : formatAgo(entry.at, now)}
@@ -105,7 +110,7 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
             type="button"
             onClick={() => sessionActions().undo(entry.id)}
             title="Undo exactly this contribution. Everything else the agent did stays."
-            className="text-[10px] uppercase tracking-wide text-zinc-500 underline decoration-dotted hover:text-zinc-100"
+            className="text-[10px] uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
           >
             undo
           </button>
@@ -117,7 +122,7 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
 
 function EmptyFeed() {
   return (
-    <p className="text-[11px] leading-relaxed text-zinc-600">
+    <p className="text-[11px] leading-relaxed text-faint">
       Every action lands here as it happens, labelled with who took it — the agent seeking, bisecting and
       annotating, and you marking, rejecting and answering. Anything the agent did can be undone from its own
       line.

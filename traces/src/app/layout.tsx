@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         whatever height is left rather than subtracting a number that was only ever true for one of
         those states.
       */}
-      <body className="flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-200 antialiased">
+      <body className="flex h-screen flex-col overflow-hidden bg-base font-sans text-ink antialiased">
         <ToolSurface />
         {children}
       </body>

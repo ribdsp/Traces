@@ -344,6 +344,10 @@ export const findElementTool: ToolDefinition = {
     `pointing at the same element. At most ${MATCH_LIMIT} matches come back.`,
   ].join(' '),
 
+  // Reads the mirror document at several instants and puts the playhead back. Matches come back with
+  // the element's visible text, which is the recorded page's words rather than ours.
+  annotations: { readOnlyHint: true, untrustedContentHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {

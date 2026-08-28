@@ -1,5 +1,6 @@
 'use client'
 
+import { Eye } from 'lucide-react'
 import { useEffect } from 'react'
 import { formatSeconds } from '@/components/ui/format-time'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
@@ -76,26 +77,28 @@ export function MarkPointOverlay() {
      * The backdrop dims and blocks the stage; it is not itself an answer target. A click that both dismisses
      * a dialog and submits a value is how someone answers a question they were only trying to read.
      */
-    <div className="absolute inset-0 flex flex-col items-center justify-end bg-zinc-950/75 p-3">
-      <div className="w-full max-w-lg border border-amber-500/40 bg-zinc-900/95 p-3">
-        <p className="text-[10px] uppercase tracking-wide text-amber-300">
+    <div className="absolute inset-0 flex flex-col items-center justify-end bg-base/75 p-3">
+      <div className="w-full max-w-lg border border-warn/40 bg-panel/95 p-3">
+        {/* The same glyph `AskHumanVisualPrompt` puts on its heading: one question, two surfaces, one mark. */}
+        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-warn">
+          <Eye aria-hidden size={12} strokeWidth={1.5} className="shrink-0" />
           The agent is waiting for you
         </p>
 
-        <p className="mt-1 text-xs leading-relaxed text-zinc-100">{pendingAsk.question}</p>
+        <p className="mt-1 text-xs leading-relaxed text-ink">{pendingAsk.question}</p>
 
         {/*
           The timestamp is the part of this answer the agent can act on, so it is the one number in the card
           that is set in mono type and updates as the playhead moves.
         */}
-        <p className="mt-2 flex items-baseline gap-1.5 text-[10px] text-zinc-500">
+        <p className="mt-2 flex items-baseline gap-1.5 text-[10px] text-muted">
           <span>marking</span>
-          <span className="font-mono text-[11px] text-sky-300">{formatSeconds(currentTime)}</span>
+          <span className="font-mono text-[11px] text-human">{formatSeconds(currentTime)}</span>
           <span>— click the timeline to mark a different moment</span>
         </p>
 
         {hintAtMs !== undefined ? (
-          <p className="mt-1 text-[10px] text-zinc-500">
+          <p className="mt-1 text-[10px] text-muted">
             The agent suggested {formatSeconds(hintAtMs)}
             {isAtHint ? (
               ', where the playhead is now.'
@@ -105,7 +108,7 @@ export function MarkPointOverlay() {
                 <button
                   type="button"
                   onClick={() => sessionActions().setCurrentTime(hintAtMs, 'human')}
-                  className="underline decoration-dotted hover:text-zinc-200"
+                  className="underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
                 >
                   Go back there
                 </button>
@@ -120,9 +123,9 @@ export function MarkPointOverlay() {
               key={choice}
               type="button"
               onClick={() => answer(choice)}
-              className="flex items-baseline gap-1 border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:border-amber-400/60 hover:text-zinc-50"
+              className="flex items-baseline gap-1 border border-line bg-raised px-2 py-1 text-xs text-ink hover:border-warn/60 focus-visible:border-warn focus-visible:outline-none"
             >
-              <span className="font-mono text-[9px] text-zinc-600">{index + 1}</span>
+              <span className="font-mono text-[9px] text-faint">{index + 1}</span>
               {choice}
             </button>
           ))}
@@ -135,7 +138,7 @@ export function MarkPointOverlay() {
             type="button"
             onClick={() => sessionActions().clearAsk()}
             title="Close the question without answering. The agent is told you skipped it."
-            className="ml-auto px-1 text-[10px] uppercase tracking-wide text-zinc-500 hover:text-zinc-200"
+            className="ml-auto px-1 text-[10px] uppercase tracking-wide text-muted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
           >
             skip
           </button>

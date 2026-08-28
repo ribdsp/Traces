@@ -1,7 +1,9 @@
 'use client'
 
+import { Check, X } from 'lucide-react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
+import { SectionHeading } from '@/components/ui/section-heading'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 import type { Hypothesis, HypothesisStatus } from '@/types/domain'
 
@@ -37,9 +39,9 @@ import type { Hypothesis, HypothesisStatus } from '@/types/domain'
  */
 
 const TREATMENTS: Record<HypothesisStatus, { card: string; text: string; tag: string | null }> = {
-  proposed: { card: 'border-zinc-800', text: 'text-zinc-200', tag: null },
-  promoted: { card: 'border-sky-500/50 bg-sky-500/5', text: 'text-zinc-100', tag: 'promoted' },
-  rejected: { card: 'border-zinc-900 opacity-50', text: 'text-zinc-400 line-through', tag: 'rejected' },
+  proposed: { card: 'border-line', text: 'text-ink', tag: null },
+  promoted: { card: 'border-human/50 bg-human/5', text: 'text-ink', tag: 'promoted' },
+  rejected: { card: 'border-panel opacity-50', text: 'text-muted line-through', tag: 'rejected' },
 }
 
 export function HypothesisCards() {
@@ -52,17 +54,16 @@ export function HypothesisCards() {
   const undecided = hypotheses.filter((hypothesis) => hypothesis.status === 'proposed').length
 
   return (
-    <section className="border-b border-zinc-800 p-3">
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <h2 className="text-[11px] uppercase tracking-wide text-zinc-500">Hypotheses</h2>
+    <section className="border-b border-line p-3">
+      <SectionHeading label="Hypotheses">
         {undecided > 0 ? (
-          <span className="text-[10px] text-amber-300/80">
+          <span className="ml-auto text-right text-[10px] text-warn/80">
             {undecided === hypotheses.length
               ? 'the agent is waiting on your call'
               : `${undecided} still undecided`}
           </span>
         ) : null}
-      </div>
+      </SectionHeading>
 
       <ul className="space-y-2">
         {hypotheses.map((hypothesis, index) => (
@@ -83,25 +84,39 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
   return (
     <li className={`border p-2 ${treatment.card}`}>
       <div className="flex items-baseline gap-1.5">
-        <span className="font-mono text-[10px] text-zinc-500">{position}</span>
+        <span className="font-mono text-[10px] text-muted">{position}</span>
         <p className={`text-xs leading-relaxed ${treatment.text}`}>{hypothesis.text}</p>
         <AuthorBadge author={hypothesis.author} />
       </div>
 
       <div className="mt-1.5 flex items-center gap-1.5">
-        <span className="text-[9px] uppercase tracking-wide text-zinc-600">confidence</span>
+        <span className="text-[9px] uppercase tracking-wide text-faint">confidence</span>
         <span
-          className="h-1 w-16 bg-zinc-800"
+          className="h-1 w-16 bg-raised"
           title={`The agent's own confidence in this explanation, relative to the others it proposed (${confidence.toFixed(2)} of 1). Its claim, not a measurement.`}
         >
+          {/*
+            `agent`, not a severity: this bar is the agent's assessment of its own reasoning, which is
+            exactly what that token means everywhere else. The track is a surface, so it takes `raised`.
+          */}
           <span
             aria-hidden
-            className="block h-1 bg-amber-400/70"
+            className="block h-1 bg-agent/70"
             style={{ width: `${confidence * 100}%` }}
           />
         </span>
         {treatment.tag ? (
-          <span className="ml-auto text-[9px] uppercase tracking-wide text-zinc-500">
+          /*
+            The verdict, as a glyph and a word. Both tags were `muted` and the same size, so telling a promoted
+            card from a rejected one down a stack of five meant reading two words that share four letters. The
+            glyph is the status; `tag` is non-null for exactly the two decided states, so the pair is complete.
+          */
+          <span className="ml-auto flex items-center gap-0.5 text-[9px] uppercase tracking-wide text-muted">
+            {hypothesis.status === 'promoted' ? (
+              <Check aria-hidden size={12} strokeWidth={1.5} />
+            ) : (
+              <X aria-hidden size={12} strokeWidth={1.5} />
+            )}
             {treatment.tag}
           </span>
         ) : null}
@@ -115,16 +130,20 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
                 type="button"
                 onClick={() => sessionActions().setCurrentTime(item.atMs, 'human')}
                 title={`Seek to ${item.atMs}ms — ${item.note}`}
-                className="flex items-baseline gap-1 border border-zinc-800 px-1 py-0.5 text-left hover:border-zinc-600"
+                className="flex items-baseline gap-1 border border-line px-1 py-0.5 text-left hover:border-faint focus-visible:border-ink focus-visible:outline-none"
               >
-                <span className="font-mono text-[10px] text-sky-300">{formatSeconds(item.atMs)}</span>
-                <span className="text-[10px] text-zinc-400">{item.note}</span>
+                {/*
+                  `ink`, not `human`: a seek is an affordance both parties use, and spending an authorship
+                  token on one would make it decorative. The border and the mono type carry the link.
+                */}
+                <span className="font-mono text-[10px] text-ink">{formatSeconds(item.atMs)}</span>
+                <span className="text-[10px] text-muted">{item.note}</span>
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-1.5 text-[10px] text-zinc-600">
+        <p className="mt-1.5 text-[10px] text-faint">
           No evidence attached — nothing on the timeline backs this one up yet.
         </p>
       )}
@@ -134,14 +153,14 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
           label="promote"
           active={hypothesis.status === 'promoted'}
           decided={decided}
-          activeClass="border-sky-500/60 text-sky-200"
+          activeClass="border-human/60 text-human"
           onClick={() => sessionActions().promoteHypothesis(hypothesis.id, 'human')}
         />
         <Verdict
           label="reject"
           active={hypothesis.status === 'rejected'}
           decided={decided}
-          activeClass="border-zinc-600 text-zinc-300"
+          activeClass="border-faint text-ink"
           onClick={() => sessionActions().rejectHypothesis(hypothesis.id, 'human')}
         />
       </div>
@@ -174,10 +193,10 @@ function Verdict({
             ? `Change the record to ${label}d. The agent already has your first answer — this does not ask it again.`
             : `Mark this ${label}d. This is what the agent's call is waiting for.`
       }
-      className={`border px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
+      className={`border px-1.5 py-0.5 text-[10px] uppercase tracking-wide focus-visible:border-ink focus-visible:outline-none ${
         active
           ? `${activeClass} cursor-default`
-          : 'border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200'
+          : 'border-line text-muted hover:border-faint hover:text-ink'
       }`}
     >
       {label}

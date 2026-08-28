@@ -2,10 +2,11 @@
 
 import 'rrweb/dist/style.css'
 
+import { TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { MarkPointOverlay } from '@/components/player/mark-point-overlay'
+import { StageEmptyState } from '@/components/player/stage-empty-state'
 import { usePlayheadSync } from '@/components/player/use-playhead'
-import { SAMPLE_RECORDINGS } from '@/components/ui/sample-recordings'
 import { createReplayEngine, setActiveEngine } from '@/lib/replay/replay-engine'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 
@@ -108,12 +109,12 @@ export function ReplayStage() {
   return (
     <div
       ref={frameRef}
-      className="relative flex h-full w-full items-center justify-center overflow-hidden bg-zinc-950 p-3"
+      className="relative flex h-full w-full items-center justify-center overflow-hidden bg-base p-3"
     >
       {recording && viewport ? (
         <div
           /** Sized to what the scale actually occupies, so centring is not thrown off by the transform. */
-          className="relative overflow-hidden ring-1 ring-zinc-800"
+          className="relative overflow-hidden ring-1 ring-line"
           style={{ width: viewport.width * scale, height: viewport.height * scale }}
         >
           <div
@@ -128,7 +129,7 @@ export function ReplayStage() {
       )}
 
       {recording && viewport ? (
-        <p className="absolute bottom-1 right-2 font-mono text-[10px] text-zinc-600">
+        <p className="absolute bottom-1 right-2 font-mono text-[10px] text-faint">
           {viewport.width}×{viewport.height} · {Math.round(scale * 100)}%
         </p>
       ) : null}
@@ -145,46 +146,19 @@ export function ReplayStage() {
   )
 }
 
-/**
- * The first thing a judge sees, so it reads as a starting point rather than as a blank panel: what
- * this is, what is on offer, and the one action that gets them moving.
- */
-function StageEmptyState() {
-  return (
-    <div className="max-w-md px-6 text-xs leading-relaxed">
-      <p className="text-zinc-300">No recording loaded.</p>
-      <p className="mt-1 text-zinc-500">
-        Traces replays a recorded browser session and lets an agent interrogate it — read the DOM at any
-        moment, binary-search the timeline, ask a human to look. Pick a sample from the header to start.
-      </p>
-
-      <ul className="mt-3 space-y-1.5">
-        {SAMPLE_RECORDINGS.map((sample) => (
-          <li key={sample.id}>
-            <span className="font-mono text-[11px] text-zinc-400">{sample.id}</span>
-            <span className="block text-zinc-600">{sample.blurb}</span>
-          </li>
-        ))}
-      </ul>
-
-      <p className="mt-3 text-zinc-600">
-        Or record your own against <span className="font-mono">bugbait</span> — README, “Making your own
-        recordings”.
-      </p>
-    </div>
-  )
-}
-
 /** Construction failed. Says which recording and what threw, because both narrow it immediately. */
 function StageErrorState({ message }: { message: string }) {
   return (
     <div
       role="alert"
-      className="absolute inset-x-3 bottom-3 border border-rose-500/50 bg-rose-950/80 px-3 py-2 text-[11px] text-rose-100"
+      className="absolute inset-x-3 bottom-3 border border-error/50 bg-error/10 px-3 py-2 text-[11px] text-ink"
     >
-      <p className="font-medium">The replay engine did not start.</p>
-      <p className="mt-0.5 font-mono text-rose-200/80">{message}</p>
-      <p className="mt-1 text-rose-200/70">
+      <p className="flex items-center gap-1.5 font-medium text-error">
+        <TriangleAlert aria-hidden size={13} strokeWidth={1.5} className="shrink-0" />
+        The replay engine did not start.
+      </p>
+      <p className="mt-0.5 font-mono text-ink">{message}</p>
+      <p className="mt-1 text-muted">
         The timeline and the tool surface are still live, but nothing can read the DOM until this is
         fixed. Reload after loading a different recording.
       </p>

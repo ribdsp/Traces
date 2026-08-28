@@ -1,8 +1,10 @@
 'use client'
 
+import { Eye } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
+import { SectionHeading } from '@/components/ui/section-heading'
 import { useWallClock } from '@/components/ui/use-clock'
 import { GATE_TIMEOUT_MS } from '@/lib/webmcp/blocking'
 import { useSessionStore } from '@/lib/store/session'
@@ -92,19 +94,26 @@ export function AskHumanVisualPrompt() {
     const timedOut = waitedMs > GATE_TIMEOUT_MS
 
     return (
-      <section className="border-b border-amber-500/30 bg-amber-500/5 p-3">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-[11px] uppercase tracking-wide text-amber-300">
-            Agent needs your eyes
-          </h2>
-          <span className="shrink-0 font-mono text-[10px] text-zinc-500">
+      <section className="border-b border-warn/30 bg-warn/5 p-3">
+        {/*
+          The one glyph in the column, on the one section that can stop the agent. `Eye` rather than a warning
+          triangle: nothing is broken — the agent has hit a judgement a person has to make by looking, which is
+          also what the answer consists of. `MarkPointOverlay` carries the same glyph on the player, so the two
+          halves of this one interaction are recognisable as each other.
+        */}
+        <SectionHeading
+          rank="alert"
+          label="Agent needs your eyes"
+          icon={<Eye aria-hidden size={12} strokeWidth={1.5} className="shrink-0 self-center text-warn" />}
+        >
+          <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">
             waiting {Math.round(waitedMs / 1000)}s
           </span>
-        </div>
+        </SectionHeading>
 
-        <p className="mt-1 text-xs leading-relaxed text-zinc-100">{pendingAsk.question}</p>
+        <p className="text-xs leading-relaxed text-ink">{pendingAsk.question}</p>
 
-        <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+        <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
           Answer on the player: put the playhead on the moment you mean, then pick one of the options over
           the replay.
           {pendingAsk.hintAtMs !== undefined
@@ -113,7 +122,7 @@ export function AskHumanVisualPrompt() {
         </p>
 
         {timedOut ? (
-          <p className="mt-1.5 border-l border-amber-500/40 pl-2 text-[10px] leading-relaxed text-amber-200/80">
+          <p className="mt-1.5 border-l border-warn/40 pl-2 text-[10px] leading-relaxed text-warn/80">
             The agent’s call has already returned — it waited {Math.round(GATE_TIMEOUT_MS / 1000)}s and got a
             ticket back, so it is retrying rather than sitting still. Your answer still reaches it.
           </p>
@@ -129,24 +138,25 @@ export function AskHumanVisualPrompt() {
    * the moment it is answered, and quiet enough that it stops competing with whatever the agent does next.
    */
   return (
-    <section className="border-b border-zinc-800 p-3">
-      <h2 className="text-[11px] uppercase tracking-wide text-zinc-500">
-        {resolved.answered ? 'You answered the agent' : 'You skipped the agent’s question'}
-      </h2>
+    <section className="border-b border-line p-3">
+      <SectionHeading
+        rank="record"
+        label={resolved.answered ? 'You answered the agent' : 'You skipped the agent’s question'}
+      />
 
-      <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">{resolved.question}</p>
+      <p className="text-[11px] leading-relaxed text-muted">{resolved.question}</p>
 
-      <p className="mt-1 flex flex-wrap items-baseline gap-1 text-[11px] text-zinc-200">
+      <p className="mt-1 flex flex-wrap items-baseline gap-1 text-[11px] text-ink">
         <span>{resolved.outcome}</span>
         <AuthorBadge author="human" />
       </p>
 
       {resolved.answered ? (
-        <p className="mt-1 text-[10px] text-zinc-600">
+        <p className="mt-1 text-[10px] text-faint">
           The moment you marked is now a marker on the timeline, and the agent has the timestamp.
         </p>
       ) : (
-        <p className="mt-1 text-[10px] text-zinc-600">
+        <p className="mt-1 text-[10px] text-faint">
           The agent was told you skipped it, rather than being left waiting.
         </p>
       )}

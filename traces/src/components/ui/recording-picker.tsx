@@ -1,14 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  SAMPLE_RECORDINGS,
-  sampleRecordingUrl,
-  type SampleRecording,
-} from '@/components/ui/sample-recordings'
-import { buildCheckpointIndex } from '@/lib/replay/checkpoint-index'
-import { loadRecordingFile } from '@/lib/replay/load-recording-file'
-import { sessionActions, useSessionStore } from '@/lib/store/session'
+import { TriangleAlert } from 'lucide-react'
+import { SAMPLE_RECORDINGS } from '@/components/ui/sample-recordings'
+import { useSampleLoader } from '@/components/ui/use-sample-loader'
+import { useSessionStore } from '@/lib/store/session'
 
 /**
  * Loads a sample recording. The only control on the page that has to work before anything else does.
@@ -22,50 +17,22 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  *             the next person debugs the player instead of the missing file.
  *   loaded  — the button for the open recording is marked, so the header answers "which one is this".
  *
+ * The fetch itself lives in `useSampleLoader`, shared with the empty state's one-click load.
+ *
  * The labels are the file stems rather than prose, deliberately: they are the same ids the agent sees in
  * `read_session_meta`, so a human reading over the agent's shoulder does not have to translate.
  */
 
-type PickerError = { id: string; message: string }
-
 export function RecordingPicker() {
   const openId = useSessionStore((s) => s.recording?.id ?? null)
-  const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [error, setError] = useState<PickerError | null>(null)
-
-  async function load(sample: SampleRecording) {
-    const url = sampleRecordingUrl(sample.id)
-
-    setLoadingId(sample.id)
-    setError(null)
-
-    try {
-      const response = await fetch(url, { cache: 'no-store' })
-
-      /** `fetch` resolves on 404, so a missing sample arrives here as a perfectly happy promise. */
-      if (!response.ok) {
-        throw new Error(`${url} — HTTP ${response.status} ${response.statusText}`.trim())
-      }
-
-      const file: unknown = await response.json()
-      // `loadRecordingFile`, not `loadRecording`: the file on disk is the `{ id, label, events, … }`
-      // wrapper the recorder writes, and it owns knowing that. `id` and `label` come from
-      // `SAMPLE_RECORDINGS` so the file cannot relabel the UI on load.
-      const recording = loadRecordingFile(sample.id, sample.label, file)
-      const checkpoints = buildCheckpointIndex(recording.events, recording.startedAt)
-
-      sessionActions().loadRecording(recording, checkpoints)
-    } catch (cause) {
-      setError({ id: sample.id, message: cause instanceof Error ? cause.message : String(cause) })
-    } finally {
-      setLoadingId(null)
-    }
-  }
+  const { load, loadingId, error } = useSampleLoader()
 
   return (
-    <div className="flex shrink-0 flex-col items-end gap-1">
-      <div className="flex items-center gap-1">
-        <span className="mr-1 text-[10px] uppercase tracking-wide text-zinc-600">recording</span>
+    <div className="flex min-w-0 shrink flex-col items-end gap-1">
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
+        <span className="mr-1 hidden text-[10px] uppercase tracking-wide text-faint sm:inline">
+          recording
+        </span>
 
         {SAMPLE_RECORDINGS.map((sample) => {
           const isOpen = sample.id === openId
@@ -79,28 +46,35 @@ export function RecordingPicker() {
               disabled={loadingId !== null}
               title={`${sample.label} — ${sample.blurb}`}
               aria-current={isOpen ? 'true' : undefined}
-              className={`border px-1.5 py-0.5 font-mono text-[10px] disabled:opacity-50 ${
+              className={`border px-1.5 py-0.5 font-mono text-[10px] focus-visible:border-ink focus-visible:outline-none disabled:opacity-50 ${
                 isOpen
-                  ? 'border-zinc-500 bg-zinc-800 text-zinc-100'
-                  : 'border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                  ? 'border-faint bg-raised text-ink'
+                  : 'border-line text-muted hover:border-faint hover:text-ink'
               }`}
             >
               {sample.id}
-              {isLoading ? <span className="ml-1 text-zinc-500">loading…</span> : null}
+              {isLoading ? <span className="ml-1 text-muted">loading…</span> : null}
             </button>
           )
         })}
       </div>
 
+      {/*
+        `max-w-full` rather than a fixed measure: at 720px a `36rem` paragraph is wider than the window,
+        and the one component whose job is to explain a failure must not become one.
+      */}
       {error ? (
         <p
           role="alert"
-          className="max-w-[36rem] text-right text-[10px] leading-snug text-rose-300"
+          className="flex max-w-full items-start justify-end gap-1 text-right text-[10px] leading-snug text-error"
         >
-          <span className="font-mono">{error.id}</span> did not load: {error.message}.{' '}
-          <span className="text-rose-400/70">
-            Samples live in <span className="font-mono">traces/public/recordings/</span> — record one
-            against <span className="font-mono">bugbait</span> if it is not there yet.
+          <TriangleAlert aria-hidden size={12} strokeWidth={1.5} className="mt-px shrink-0" />
+          <span>
+            <span className="font-mono">{error.id}</span> did not load: {error.message}.{' '}
+            <span className="text-error/70">
+              Samples live in <span className="font-mono">traces/public/recordings/</span> — record one
+              against <span className="font-mono">bugbait</span> if it is not there yet.
+            </span>
           </span>
         </p>
       ) : null}

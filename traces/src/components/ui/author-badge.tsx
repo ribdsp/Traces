@@ -14,7 +14,10 @@ interface AuthorBadgeProps {
  * differently, it is one file.
  *
  * Text, not just colour. This gets watched on a compressed video by people who may not distinguish
- * amber from blue, and "AGENT" survives both.
+ * violet from blue, and "AGENT" survives both.
+ *
+ * The two colours are `agent` and `human` from the palette, which exist for this and are documented as
+ * carrying authorship rather than decoration. Nothing else in the app may borrow them.
  */
 export function AuthorBadge({ author, className = '' }: AuthorBadgeProps) {
   const isAgent = author === 'agent'
@@ -22,7 +25,7 @@ export function AuthorBadge({ author, className = '' }: AuthorBadgeProps) {
   return (
     <span
       className={`ml-1 px-1 text-[9px] uppercase tracking-wide ${
-        isAgent ? 'bg-amber-400/15 text-amber-300' : 'bg-sky-400/15 text-sky-300'
+        isAgent ? 'bg-agent/15 text-agent' : 'bg-human/15 text-human'
       } ${className}`}
     >
       {isAgent ? 'agent' : 'you'}

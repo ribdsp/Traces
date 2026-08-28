@@ -1,8 +1,10 @@
 'use client'
 
+import { Check, Copy, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
+import { SectionHeading } from '@/components/ui/section-heading'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 import { answerReportReview, hasPendingReportReview } from '@/lib/webmcp/tools/propose-report'
 import type { Recording, Report } from '@/types/domain'
@@ -102,16 +104,17 @@ export function ReportDraft() {
   const unverified = report.steps.filter((step) => !step.verified).length
 
   return (
-    <section className="border-b border-zinc-800 p-3">
-      <div className="mb-1.5 flex items-baseline gap-1">
-        <h2 className="text-[11px] uppercase tracking-wide text-zinc-500">Report draft</h2>
+    <section className="border-b border-line p-3">
+      <SectionHeading label="Report draft">
         <AuthorBadge author={report.author} />
         {awaitingAgent ? (
-          <span className="ml-auto text-[10px] text-amber-300/80">waiting on your decision</span>
+          <span className="ml-auto text-right text-[10px] text-warn/80">
+            waiting on your decision
+          </span>
         ) : decision !== null ? (
-          <span className="ml-auto text-[10px] text-zinc-500">{decision.kind}</span>
+          <span className="ml-auto text-[10px] text-muted">{decision.kind}</span>
         ) : null}
-      </div>
+      </SectionHeading>
 
       {/*
         Editable in place: it reads as text until it has focus. A titled box with a pencil icon would make
@@ -121,7 +124,7 @@ export function ReportDraft() {
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         aria-label="Report title"
-        className="w-full border border-transparent bg-transparent text-xs font-medium text-zinc-100 hover:border-zinc-800 focus:border-zinc-600 focus:outline-none"
+        className="w-full border border-transparent bg-transparent text-xs font-medium text-ink hover:border-line focus:border-ink focus:outline-none"
       />
 
       <textarea
@@ -130,11 +133,11 @@ export function ReportDraft() {
         rows={2}
         placeholder="No summary. Add one — it is the first thing whoever picks this up will read."
         aria-label="Report summary"
-        className="mt-1 w-full resize-none border border-transparent bg-transparent text-xs leading-relaxed text-zinc-400 placeholder:text-zinc-600 hover:border-zinc-800 focus:border-zinc-600 focus:outline-none"
+        className="mt-1 w-full resize-none border border-transparent bg-transparent text-xs leading-relaxed text-muted placeholder:text-faint hover:border-line focus:border-ink focus:outline-none"
       />
 
       {edited ? (
-        <p className="flex items-baseline gap-1 text-[10px] text-zinc-500">
+        <p className="flex items-baseline gap-1 text-[10px] text-muted">
           <span>Your wording, not the agent’s.</span>
           <button
             type="button"
@@ -142,7 +145,7 @@ export function ReportDraft() {
               setTitle(report.title)
               setSummary(report.summary)
             }}
-            className="underline decoration-dotted hover:text-zinc-200"
+            className="underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
           >
             Restore the agent’s
           </button>
@@ -153,13 +156,14 @@ export function ReportDraft() {
         <ol className="space-y-1">
           {report.steps.map((step, index) => (
             <li key={`${index}-${step.text}`} className="flex items-baseline gap-1.5 text-xs">
-              <span className="shrink-0 font-mono text-[10px] text-zinc-600">{index + 1}</span>
-              <span className={step.verified ? 'text-zinc-300' : 'text-zinc-400'}>{step.text}</span>
+              <span className="shrink-0 font-mono text-[10px] text-faint">{index + 1}</span>
+              <span className={step.verified ? 'text-ink' : 'text-muted'}>{step.text}</span>
 
               {step.atMs !== undefined ? <Timestamp atMs={step.atMs} /> : null}
 
               {step.verified ? null : (
-                <span className="shrink-0 border border-amber-500/40 px-1 text-[9px] uppercase tracking-wide text-amber-300">
+                <span className="flex shrink-0 items-center gap-0.5 border border-warn/40 px-1 text-[9px] uppercase tracking-wide text-warn">
+                  <TriangleAlert aria-hidden size={12} strokeWidth={1.5} />
                   unverified
                 </span>
               )}
@@ -168,7 +172,7 @@ export function ReportDraft() {
         </ol>
 
         {unverified > 0 ? (
-          <p className="mt-1.5 border-l border-amber-500/40 pl-2 text-[10px] leading-relaxed text-zinc-500">
+          <p className="mt-1.5 border-l border-warn/40 pl-2 text-[10px] leading-relaxed text-muted">
             {unverified === 1 ? 'One step is' : `${unverified} steps are`} marked unverified: no recorded
             event in this session matches {unverified === 1 ? 'it' : 'them'}, so the agent inferred{' '}
             {unverified === 1 ? 'it' : 'them'} rather than finding {unverified === 1 ? 'it' : 'them'}. Check{' '}
@@ -187,7 +191,7 @@ export function ReportDraft() {
             {report.evidence.map((item, index) => (
               <li key={`${item.atMs}-${index}`} className="flex items-baseline gap-1.5 text-xs">
                 <Timestamp atMs={item.atMs} />
-                <span className="text-zinc-400">{item.note}</span>
+                <span className="text-muted">{item.note}</span>
               </li>
             ))}
           </ul>
@@ -205,7 +209,7 @@ export function ReportDraft() {
                 : 'Send the report back approved. This is what the agent’s call is waiting on.'
               : 'No agent is waiting on this draft, but your edits are still recorded.'
           }
-          className="border border-sky-500/50 bg-sky-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-sky-200 hover:border-sky-400"
+          className="border border-human/50 bg-human/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-human hover:border-human focus-visible:border-ink focus-visible:outline-none"
         >
           {edited ? 'approve with edits' : 'approve'}
         </button>
@@ -218,7 +222,7 @@ export function ReportDraft() {
           type="button"
           onClick={() => commit(false)}
           title="Tell the agent the draft is not good enough. It is asked what to support better, not to resend it."
-          className="border border-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
+          className="border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted hover:border-faint hover:text-ink focus-visible:border-ink focus-visible:outline-none"
         >
           reject
         </button>
@@ -227,20 +231,27 @@ export function ReportDraft() {
           type="button"
           onClick={copy}
           title="Copy the report as Markdown, ready to paste into a tracker."
-          className="ml-auto border border-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400 hover:border-zinc-600 hover:text-zinc-100"
+          className="ml-auto flex items-center gap-1 border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted hover:border-faint hover:text-ink focus-visible:border-ink focus-visible:outline-none"
         >
+          {/* The glyph is the state: `Check` only ever appears after a copy actually succeeded. */}
+          {copied === 'ok' ? (
+            <Check aria-hidden size={12} strokeWidth={1.5} />
+          ) : (
+            <Copy aria-hidden size={12} strokeWidth={1.5} />
+          )}
           {copied === 'ok' ? 'copied' : 'copy as markdown'}
         </button>
       </div>
 
       {copied === 'failed' ? (
-        <p role="alert" className="mt-1 text-[10px] text-rose-300">
+        <p role="alert" className="mt-1 flex items-start gap-1 text-[10px] text-error">
+          <TriangleAlert aria-hidden size={12} strokeWidth={1.5} className="mt-px shrink-0" />
           The browser refused clipboard access. Select the report text and copy it by hand.
         </p>
       ) : null}
 
       {decision !== null && !awaitingAgent ? (
-        <p className="mt-1 text-[10px] leading-relaxed text-zinc-600">
+        <p className="mt-1 text-[10px] leading-relaxed text-faint">
           {!decision.reached
             ? 'No agent was waiting on this draft, so there was nothing to answer. Anything you changed is still saved above.'
             : decision.kind === 'approved'
@@ -255,14 +266,14 @@ export function ReportDraft() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-2">
-      <h3 className="text-[9px] uppercase tracking-wide text-zinc-600">{label}</h3>
+      <h3 className="text-[9px] uppercase tracking-wide text-faint">{label}</h3>
       <div className="mt-0.5">{children}</div>
     </div>
   )
 }
 
 function prose(text: string) {
-  return <p className="text-xs leading-relaxed text-zinc-300">{text}</p>
+  return <p className="text-xs leading-relaxed text-ink">{text}</p>
 }
 
 /** Every time in the report is a seek. Checking a claim has to cost one click, or nobody checks. */
@@ -272,7 +283,12 @@ function Timestamp({ atMs }: { atMs: number }) {
       type="button"
       onClick={() => sessionActions().setCurrentTime(atMs, 'human')}
       title={`Seek to ${atMs}ms`}
-      className="shrink-0 font-mono text-[10px] text-sky-300 underline decoration-dotted hover:text-sky-200"
+      /*
+        `ink` and a dotted underline rather than the `human` token. Every seek in the app is a human
+        action, so tinting one with `human` would spend an authorship colour on an affordance and leave it
+        meaning nothing. The underline going solid is the hover, which survives a monochrome screen.
+      */
+      className="shrink-0 font-mono text-[10px] text-ink underline decoration-dotted hover:decoration-solid focus-visible:bg-raised focus-visible:outline-none"
     >
       {formatSeconds(atMs)}
     </button>

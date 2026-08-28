@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatAgo, useWallClock } from '@/components/ui/use-clock'
+import { SectionHeading } from '@/components/ui/section-heading'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 import type { Task, TaskStatus } from '@/types/domain'
 
@@ -52,9 +53,9 @@ const EXAMPLES = [
 ]
 
 const TREATMENTS: Record<TaskStatus, { row: string; label: string; text: string }> = {
-  open: { row: 'border-zinc-800', label: 'text-zinc-500', text: 'text-zinc-300' },
-  claimed: { row: 'border-amber-500/50', label: 'text-amber-300', text: 'text-zinc-100' },
-  done: { row: 'border-zinc-800', label: 'text-zinc-600', text: 'text-zinc-500 line-through' },
+  open: { row: 'border-line', label: 'text-muted', text: 'text-ink' },
+  claimed: { row: 'border-warn/50', label: 'text-warn', text: 'text-ink' },
+  done: { row: 'border-line', label: 'text-faint', text: 'text-muted line-through' },
 }
 
 export function AgentLane() {
@@ -70,8 +71,8 @@ export function AgentLane() {
   }
 
   return (
-    <section className="border-b border-zinc-800 p-3">
-      <h2 className="mb-2 text-[11px] uppercase tracking-wide text-zinc-500">Agent lane</h2>
+    <section className="border-b border-line p-3">
+      <SectionHeading label="Agent lane" />
 
       {tasks.length === 0 ? (
         <EmptyLane onPick={setDraft} />
@@ -96,7 +97,7 @@ export function AgentLane() {
         rows={2}
         placeholder="Hand the agent a task — Enter to send, Shift+Enter for a newline"
         aria-label="Hand the agent a task"
-        className="w-full resize-none border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
+        className="w-full resize-none border border-line bg-base px-2 py-1 text-xs leading-relaxed text-ink placeholder:text-faint focus:border-ink focus:outline-none"
       />
     </section>
   )
@@ -114,14 +115,14 @@ function TaskRow({ task, now }: { task: Task; now: number | null }) {
         duration under prefers-reduced-motion, which turns this into a static dot instead of removing it.
       */}
       {task.status === 'claimed' ? (
-        <span aria-hidden className="h-1 w-1 shrink-0 animate-pulse rounded-full bg-amber-400" />
+        <span aria-hidden className="h-1 w-1 shrink-0 animate-pulse rounded-full bg-warn" />
       ) : null}
 
       <span className={treatment.text}>{task.text}</span>
       <AuthorBadge author={task.author} />
 
       {task.status === 'claimed' && task.claimedAt !== undefined && now !== null ? (
-        <span className="ml-auto shrink-0 font-mono text-[10px] text-zinc-600">
+        <span className="ml-auto shrink-0 font-mono text-[10px] text-faint">
           working, claimed {formatAgo(task.claimedAt, now)}
         </span>
       ) : null}
@@ -131,7 +132,7 @@ function TaskRow({ task, now }: { task: Task; now: number | null }) {
 
 function EmptyLane({ onPick }: { onPick: (text: string) => void }) {
   return (
-    <div className="mb-2 text-[10px] leading-relaxed text-zinc-600">
+    <div className="mb-2 text-[10px] leading-relaxed text-faint">
       <p>
         Nothing queued. An agent calling <span className="font-mono">claim_next_task</span> waits here
         until you add something, then takes it without being asked twice.
@@ -143,7 +144,7 @@ function EmptyLane({ onPick }: { onPick: (text: string) => void }) {
             <button
               type="button"
               onClick={() => onPick(example)}
-              className="text-left text-zinc-500 underline decoration-dotted hover:text-zinc-200"
+              className="text-left text-muted underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
             >
               {example}
             </button>

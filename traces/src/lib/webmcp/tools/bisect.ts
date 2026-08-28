@@ -29,6 +29,14 @@ export const bisectTool: ToolDefinition = {
     'or when an error message first appeared. The condition is assumed to change once and stay',
     'changed. Call read_session_meta first to learn the recording duration.',
   ].join(' '),
+  /*
+   * No annotations, and the `readOnlyHint` omission is the deliberate half. bisect looks like a pure
+   * search, but it writes `setBisectTrace` to the session store, and that trace is drawn on the human's
+   * timeline — the probe sequence animating is how a person sees the search happen at all. A host told
+   * this call was read-only would be entitled to make it speculatively, which would scribble a search
+   * nobody asked for across the timeline. `untrustedContentHint` is off on its own merits: `BisectResult`
+   * is timestamps, counts and booleans, and quotes nothing from the page.
+   */
   inputSchema: {
     type: 'object',
     properties: {

@@ -27,8 +27,14 @@ export type RegistrationResult = {
  * without the origin trial would report `polyfill` to a visitor whose agent still cannot see a single
  * tool, which is a more confusing lie than `unavailable`. So in production the answer is either the
  * real implementation or an honest banner.
+ *
+ * Async because `registerTool` returns a promise and every failure the spec defines arrives as a
+ * rejection — not a thrown exception. A synchronous `try`/`catch` here caught nothing, so a page whose
+ * agent cluster is not origin-keyed reported sixteen live tools while registering zero. That is the
+ * failure next.config.mjs calls "the worst available failure", and this is the only place that can see
+ * it.
  */
-export function registerTools(): RegistrationResult {
+export async function registerTools(): Promise<RegistrationResult> {
   // Next.js renders this tree on the server too, where there is no document to register against.
   if (typeof document === 'undefined') return { mode: 'unavailable', registered: [] }
 
@@ -48,34 +54,60 @@ export function registerTools(): RegistrationResult {
    * cleanup is one line and cannot half-happen.
    */
   controller?.abort()
-  controller = new AbortController()
+  const surface = new AbortController()
+  controller = surface
 
-  const registered: string[] = []
-  for (const tool of allTools) {
-    try {
+  /*
+   * Concurrently, and `allSettled` rather than `all`: sixteen sequential awaits is sixteen round trips
+   * through the host for no reason, and one host rejecting one schema must not cost us the other
+   * fifteen. A surface that is fifteen-sixteenths present is worth having, and the banner shows what
+   * actually registered rather than what we hoped would.
+   *
+   * `async` on the mapper is not decoration: a host that throws synchronously instead of rejecting
+   * would otherwise escape `allSettled` through `map` and cost all sixteen.
+   */
+  const outcomes = await Promise.allSettled(
+    allTools.map(async (tool) =>
       modelContext.registerTool(
         {
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema as unknown as Record<string, unknown>,
           execute: tool.execute,
+          ...(tool.annotations ? { annotations: tool.annotations } : {}),
         },
-        { signal: controller.signal },
-      )
-      registered.push(tool.name)
+        { signal: surface.signal },
+      ),
+    ),
+  )
 
-      // Keeps `window.tracesTools` useful in native mode, where the shim's registry never fills.
-      polyfillRegistry.set(tool.name, tool)
-    } catch (error: unknown) {
-      /*
-       * One host rejecting one schema must not cost us the other fifteen tools. Reported rather than
-       * rethrown, because a surface that is fifteen-sixteenths present is worth having and the banner
-       * still shows what registered.
-       */
-      const message = error instanceof Error ? error.message : String(error)
+  /*
+   * Between the await above and the writes below, an unmount or a second call may have aborted this
+   * surface — which deregistered every tool that had resolved. Reporting those names now would put a
+   * green banner over an empty tool list, and repopulating `polyfillRegistry` would resurrect closures
+   * pointing at a Replayer that has already gone.
+   */
+  if (surface.signal.aborted) return { mode, registered: [] }
+
+  const registered: string[] = []
+  for (const [index, outcome] of outcomes.entries()) {
+    const tool = allTools[index]
+    if (tool === undefined) continue
+
+    if (outcome.status === 'rejected') {
+      const reason: unknown = outcome.reason
+      const message = reason instanceof Error ? reason.message : String(reason)
       // eslint-disable-next-line no-console -- a rejected registration is invisible otherwise
       console.warn(`[traces] host rejected tool '${tool.name}': ${message}`)
+      continue
     }
+
+    registered.push(tool.name)
+
+    // Keeps `window.tracesTools` useful in native mode, where the shim's registry never fills. After
+    // the promise resolves, never alongside the call: an entry here for a tool the host refused is a
+    // console handle that can call something no agent can see.
+    polyfillRegistry.set(tool.name, tool)
   }
 
   return { mode, registered }

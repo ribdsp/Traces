@@ -37,6 +37,14 @@ export const measureLayoutToolDefinition: ToolDefinition = {
     'about an element (its value, whether it is disabled, its text) comes from read_dom_at instead.',
   ].join(' '),
 
+  /*
+   * Read-only: it seeks the shared Replayer to measure, then puts the playhead back where the human left
+   * it. No `untrustedContentHint` — the payload is geometry and the agent's own selectors, and this is
+   * deliberately the one element tool that returns no text from the page (docs §9 sends you to
+   * read_dom_at for that, which is annotated accordingly).
+   */
+  annotations: { readOnlyHint: true },
+
   inputSchema: {
     type: 'object',
     properties: {
