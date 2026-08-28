@@ -375,6 +375,7 @@ Full analysis, including what is deliberately **out of scope**:
 | TypeScript | Apache-2.0 | strict mode; tool schemas and domain types stay honest |
 | [Tailwind CSS](https://tailwindcss.com) | MIT | dense instrument UI without a component library |
 | [zustand](https://github.com/pmndrs/zustand) | MIT | state readable and writable *from outside React* — see below |
+| [IBM Plex Sans + Plex Mono](https://github.com/IBM/plex) | OFL-1.1 | one superfamily, so a mono timestamp and a sans label share a line without a step in it — `src/app/fonts.ts` |
 | [vitest](https://vitest.dev) | MIT | the pure modules are tested; the UI is not |
 
 Every dependency is permissively licensed and compatible with MIT redistribution. We deliberately

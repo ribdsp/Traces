@@ -4,10 +4,9 @@
 
 /*
  *
- * Deliberately almost empty. The visual direction is a Day 6 decision, and a scaffold that
- * pre-picks a font stack and a palette makes that decision by default rather than on purpose. What is
- * here is only what the replay mechanism needs, plus the two globals that would otherwise be
- * rediscovered at 2am.
+ * Deliberately almost empty. The visual direction is carried by tailwind.config.ts (palette, type
+ * scale) and src/app/fonts.ts (the Plex Sans / Plex Mono pair, and why); what is here is only what the
+ * replay mechanism needs, plus the two globals that would otherwise be rediscovered at 2am.
  *
  * One thing worth deciding early rather than late: this is an operations tool, so it wants density and
  * quiet — small type, tight rows, one accent that means something. Two accents are already in use and

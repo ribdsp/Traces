@@ -31,9 +31,11 @@ const config: Config = {
         ok: '#3ecf8e',
       },
       fontFamily: {
-        // Placeholder. The real pair is a Day 6 decision; system-ui as "the design" is banned.
-        sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // IBM Plex Sans and Plex Mono, one superfamily so the two can share a line without a step in
+        // it. Declared in src/app/fonts.ts, which is where the reasoning lives; these are the CSS
+        // variables next/font defines, with the platform stack behind them for the swap window.
+        sans: ['var(--font-plex-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-plex-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         // Dense by default.
