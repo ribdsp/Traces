@@ -21,11 +21,11 @@ import type { RegistrationResult } from '@/lib/webmcp/register-tools'
  *
  * Three things here are load-bearing rather than stylistic:
  *
- *   - **Degraded states render no collapse control at all.** Not "collapsed by default", not "reopens on
- *     change" — while the surface is amber or red the panel is open and there is no button to close it.
- *     A chip that can hide `polyfill` or `unavailable` behind a neutral-looking dot is the exact bug the
- *     banner exists to prevent, and adding a second, dismissible place for that state to live would
- *     reintroduce it one component over. Green and idle collapse freely.
+ *   - **The red state renders no collapse control at all.** Not "collapsed by default", not "reopens on
+ *     change" — while the surface is unavailable the panel is open and there is no button to close it. What
+ *     makes that safe to relax for amber, and why it is not relaxed here, is worked out at `expanded`
+ *     below; the short version is that an error panel cannot grow tall enough to cover anything, because
+ *     the tool grid it would have grown by is exactly what an error state does not have.
  *   - **The tool list comes from the host, not from us.** `document.modelContext.getTools()` reports what
  *     the browser actually holds, so a tool the host rejected cannot appear here. Reading our own
  *     `allTools` array instead would render sixteen confident cards on a page where zero are callable.
@@ -165,11 +165,27 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
   const health = healthOf(registration)
 
   /*
-   * Amber and red are not collapsible. See the note at the top of the file: this is the constraint that
-   * keeps a second, dismissible copy of the surface's health from undoing the banner.
+   * Red is not collapsible. Amber no longer is either way — it opens on arrival like any other state and can
+   * be closed — and the distinction is mechanical rather than a softening of the rule above.
+   *
+   * The rule is that a degraded surface must not be hideable. What discharges it is `ToolStatusBanner`:
+   * full-width, in flow, no close control, naming the mode in words at the top of the page. This panel was
+   * additionally forced open as a second guarantee, and at 720px that guarantee costs the entire agent
+   * column — measured: the panel is 288px of tool grid starting 112px off the bottom, which lands squarely
+   * on the task-queue textarea, the control `page.tsx` focuses on `a`. Occluding a focusable input with
+   * something that has no close button is the bug this file's own note says must never happen, and in the
+   * `polyfill` state, which is what Chrome shows without the flag, it happens every time.
+   *
+   * `error` is exempt because the panel is short there *by construction*: the tool grid is gated on
+   * `tools.length > 0` and an error state has none, so what is forced open is a definition, a sentence and
+   * four prompts — roughly 180px, which clears the input at the height a recording is made at. The state
+   * that can grow to cover something is the state that is no longer pinned open.
+   *
+   * The chip keeps the amber triangle and the screen-reader word in both cases, so collapsing changes how
+   * much is said, never whether the page admits it.
    */
   const degraded = health === 'warn' || health === 'error'
-  const expanded = degraded || open
+  const expanded = health === 'error' || open
 
   /*
    * The host's list when we have one, ours when we do not — and ours is filtered to what actually
@@ -280,7 +296,7 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
         </div>
       ) : null}
 
-      {degraded ? (
+      {health === 'error' ? (
         /*
           No button, on purpose. The chip still names the surface so the badge does not vanish in the state
           it matters most, but there is nothing here to click, so there is nothing here that can hide it.
