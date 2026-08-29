@@ -1,13 +1,14 @@
 'use client'
 
-import { Pause, Play } from 'lucide-react'
-import { useEffect } from 'react'
+import { Check, ChevronDown, ChevronUp, Pause, Play } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import {
   PLAYBACK_SPEEDS,
   STEP_COARSE_MS,
   STEP_MS,
   useLastSeekAuthor,
   usePlayback,
+  type PlaybackSpeed,
 } from '@/components/player/use-playhead'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
@@ -27,8 +28,8 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  * frame follows through `usePlayheadSync`, which is what keeps one clock authoritative instead of two.
  *
  * What shipped, and why:
- *   - play/pause and 0.5× / 1× / 2×, held in local state by `usePlayback` — neither is the agent's
- *     business, and `SessionState` is frozen
+ *   - play/pause and a speed dropdown (0.5× / 1× / 2×), held in local state by `usePlayback` — neither
+ *     is the agent's business, and `SessionState` is frozen
  *   - a scrubber writing through `setCurrentTime(atMs, 'human')`, quantised to the arrow-key step so a
  *     focused slider and the global shortcut agree
  *   - a marker when the agent moved the playhead last, derived by `useLastSeekAuthor` rather than from a
@@ -46,10 +47,9 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  * `globals.css`, because `::-webkit-slider-thumb` cannot be reached from a utility class without a
  * dozen arbitrary variants that nobody will read twice.
  *
- * The speeds are one segmented control rather than three separate buttons. Three equal bordered
- * rectangles state that there are three options and stay silent about which one is on; a single
- * enclosure with one raised segment answers "what speed is this playing at" from across a room, which
- * is the question the control exists for.
+ * Speed is a compact dropdown rather than three segments. Three equal rectangles cost width the
+ * scrubber needs at 720px, and a single trigger that reads "1×" already answers what speed this is
+ * playing at. The menu opens upward so it sits on the replay, not on the timeline.
  */
 
 /** So Day 6's shortcut can put focus on the scrubber without threading a ref through the layout. */
@@ -136,15 +136,15 @@ export function PlayerControls() {
         disabled={disabled}
         title={playback.isPlaying ? 'Pause (space)' : 'Play (space)'}
         aria-label={playback.isPlaying ? 'Pause' : 'Play'}
-        className="flex h-6 w-9 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-raised text-ink shadow-raised hover:border-faint disabled:border-line disabled:bg-panel disabled:text-faint"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-ink text-panel shadow-raised hover:opacity-90 disabled:border disabled:border-line disabled:bg-panel disabled:text-faint disabled:opacity-100"
       >
         {/* The glyph is the whole control, so `aria-label` above is its only name — do not drop it.
-            Filled rather than outlined: a transport button is the one place in this UI that should read
-            as a solid target, and a 14px hairline triangle does not survive being video. */}
+            Filled, and inverted against `ink`: a transport button is the one place in this UI that
+            should read as a solid target, and a 14px hairline triangle does not survive being video. */}
         {playback.isPlaying ? (
-          <Pause aria-hidden size={13} strokeWidth={1} className="fill-current" />
+          <Pause aria-hidden size={14} strokeWidth={1} className="fill-current" />
         ) : (
-          <Play aria-hidden size={13} strokeWidth={1} className="fill-current" />
+          <Play aria-hidden size={14} strokeWidth={1} className="ml-px fill-current" />
         )}
       </button>
 
@@ -195,38 +195,11 @@ export function PlayerControls() {
         />
       </div>
 
-      {/*
-        One enclosure, three segments. `aria-pressed` per segment rather than a radiogroup: these are
-        toggles onto a live player, not a form value that gets submitted, and `pressed` is what a screen
-        reader should read back for "2× is on".
-      */}
-      <div
-        role="group"
-        aria-label="Playback speed"
-        className="flex shrink-0 divide-x divide-line overflow-hidden rounded-sm border border-line-strong bg-panel"
-      >
-        {PLAYBACK_SPEEDS.map((speed) => {
-          const active = playback.speed === speed
-
-          return (
-            <button
-              key={speed}
-              type="button"
-              onClick={() => playback.setSpeed(speed)}
-              disabled={disabled}
-              aria-pressed={active}
-              title={`Play at ${speed}× speed`}
-              className={`px-1.5 py-0.5 font-mono text-label tabular-nums disabled:text-faint ${
-                active
-                  ? 'bg-raised text-ink shadow-raised'
-                  : 'text-muted hover:bg-raised/60 hover:text-ink'
-              }`}
-            >
-              {speed}×
-            </button>
-          )
-        })}
-      </div>
+      <SpeedMenu
+        speed={playback.speed}
+        disabled={disabled}
+        onChange={playback.setSpeed}
+      />
 
       {/*
         A playhead that moves on its own is uncanny until it is attributed. This is deliberately quiet —
@@ -241,6 +214,93 @@ export function PlayerControls() {
           </>
         ) : null}
       </span>
+    </div>
+  )
+}
+
+function SpeedMenu({
+  speed,
+  disabled,
+  onChange,
+}: {
+  speed: PlaybackSpeed
+  disabled: boolean
+  onChange: (speed: PlaybackSpeed) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    const onPointerDown = (event: PointerEvent) => {
+      const wrap = wrapRef.current
+      if (wrap && event.target instanceof Node && !wrap.contains(event.target)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={wrapRef} className="relative shrink-0">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Playback speed ${speed}×`}
+        title="Playback speed"
+        onClick={() => setOpen((was) => !was)}
+        className="flex h-7 items-center gap-1 rounded-sm border border-line-strong bg-raised px-1.5 font-mono text-label tabular-nums text-ink shadow-raised hover:border-faint disabled:text-faint"
+      >
+        {speed}×
+        {open ? (
+          <ChevronDown aria-hidden size={12} strokeWidth={1.75} className="text-muted" />
+        ) : (
+          <ChevronUp aria-hidden size={12} strokeWidth={1.75} className="text-muted" />
+        )}
+      </button>
+
+      {open ? (
+        <ul
+          role="listbox"
+          aria-label="Playback speed"
+          className="absolute bottom-[calc(100%+4px)] right-0 z-20 min-w-full overflow-hidden rounded-md border border-line-strong bg-raised p-0.5 shadow-raised"
+        >
+          {PLAYBACK_SPEEDS.map((option) => {
+            const active = option === speed
+            return (
+              <li key={option} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option)
+                    setOpen(false)
+                  }}
+                  className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-1 font-mono text-label tabular-nums ${
+                    active ? 'bg-panel text-ink' : 'text-muted hover:bg-panel hover:text-ink'
+                  }`}
+                >
+                  {active ? (
+                    <Check aria-hidden size={12} strokeWidth={2} className="text-ok" />
+                  ) : (
+                    <span aria-hidden className="w-3 shrink-0" />
+                  )}
+                  {option}×
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
     </div>
   )
 }

@@ -1,8 +1,9 @@
 'use client'
 
-import { TriangleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ChevronDown, ChevronUp, TriangleAlert } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { WebMcpPanel } from '@/components/ui/webmcp-badge'
 import { onToolChange } from '@/lib/webmcp/tool-change'
 import type { RegistrationResult } from '@/lib/webmcp/register-tools'
 
@@ -174,6 +175,7 @@ export function ToolStatusBanner({ registration }: ToolStatusBannerProps) {
             changes={changes}
             browser={browser}
             ready={registration !== null}
+            registration={registration}
           />,
           slot,
         )
@@ -206,16 +208,25 @@ interface StatusPillProps {
   changes: number
   browser: string
   ready: boolean
+  registration: RegistrationResult | null
 }
 
 /**
  * Five words in the header: a state dot, the surface's name, and how many tools are on it.
  *
- * `role="status"` rather than nothing, because this inherited the healthy row's live region along with
- * its job — a surface that registers late, or grows a tool mid-session, should still be announced.
- * `aria-live` politeness is the default for `status`, which is right for a count that changes on its own.
+ * The pill is also the trigger for the explanation panel that used to live as a second chip above the
+ * timeline. One control, two jobs that do not fight: the visible count is the health signal, the
+ * dropdown is the catalogue. A `role="status"` live region sits beside the button rather than on it,
+ * because a button that is also a live region is two roles on one node.
+ *
+ * Two chevrons rather than one rotated: under `prefers-reduced-motion` a transform-based caret would
+ * sit at one angle in both states. Swapping the glyph is state, not animation. Same reasoning as
+ * `recording-picker.tsx`.
  */
-function StatusPill({ health, count, changes, browser, ready }: StatusPillProps) {
+function StatusPill({ health, count, changes, browser, ready, registration }: StatusPillProps) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
   const where = browser ? ` in ${browser}` : ''
   const title = !ready
     ? 'Registering the WebMCP tool surface…'
@@ -225,30 +236,67 @@ function StatusPill({ health, count, changes, browser, ready }: StatusPillProps)
         ? `${count} tools registered against the local development shim, not the browser's own WebMCP. No external agent can see them.`
         : 'No tools are agent-callable. The banner below the header says why.'
 
+  useEffect(() => {
+    if (!open) return
+
+    const onPointerDown = (event: PointerEvent) => {
+      const wrap = wrapRef.current
+      if (wrap && event.target instanceof Node && !wrap.contains(event.target)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
   return (
-    <div
-      role="status"
-      title={title}
-      className={`flex shrink-0 items-center gap-1.5 rounded-sm border px-1.5 py-0.5 ${PILL[health]}`}
-    >
-      {health === 'warn' || health === 'error' ? (
-        <TriangleAlert aria-hidden size={12} strokeWidth={1.75} className="shrink-0" />
-      ) : (
-        <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[health]}`} />
-      )}
-      <span className="text-label tracking-wide">WebMCP</span>
-      <span aria-hidden className="h-2.5 w-px bg-current opacity-25" />
-      <span className="font-mono text-label tabular-nums">
-        {ready ? count : '–'}
-        {changes > 0 ? (
-          <span className="opacity-70" title={`${changes} toolchange events since load`}>
-            {' '}
-            +{changes}
-          </span>
-        ) : null}
-      </span>
-      {/* The dot is decoration to a screen reader; this is the state it stands for. */}
-      <span className="sr-only">— {STATE_WORD[health]}</span>
+    <div ref={wrapRef} className="relative shrink-0">
+      <div role="status" className="sr-only">
+        WebMCP — {STATE_WORD[health]}
+        {ready ? `, ${count} tools` : ''}
+      </div>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="webmcp-panel"
+        title={title}
+        onClick={() => setOpen((was) => !was)}
+        className={`flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 ${PILL[health]}`}
+      >
+        {health === 'warn' || health === 'error' ? (
+          <TriangleAlert aria-hidden size={12} strokeWidth={1.75} className="shrink-0" />
+        ) : (
+          <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[health]}`} />
+        )}
+        <span className="text-label tracking-wide">WebMCP</span>
+        <span aria-hidden className="h-2.5 w-px bg-current opacity-25" />
+        <span className="font-mono text-label tabular-nums">
+          {ready ? count : '–'}
+          {changes > 0 ? (
+            <span className="opacity-70" title={`${changes} toolchange events since load`}>
+              {' '}
+              +{changes}
+            </span>
+          ) : null}
+        </span>
+        {open ? (
+          <ChevronUp aria-hidden size={12} strokeWidth={1.75} className="text-current opacity-70" />
+        ) : (
+          <ChevronDown aria-hidden size={12} strokeWidth={1.75} className="text-current opacity-70" />
+        )}
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-[calc(100%+4px)] z-40">
+          <WebMcpPanel registration={registration} />
+        </div>
+      ) : null}
     </div>
   )
 }

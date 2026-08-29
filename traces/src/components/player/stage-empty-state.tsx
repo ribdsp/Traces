@@ -32,25 +32,24 @@ export function StageEmptyState() {
   const { load, loadingId, error } = useSampleLoader()
 
   return (
-    <div className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-meta leading-relaxed">
+    <div className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-body leading-relaxed">
       <h2 className="text-title font-semibold tracking-tight text-ink">
         Session replay an AI agent can interrogate
       </h2>
       <p className="mt-1 text-muted">
-        It reads the DOM at any moment, binary-searches the timeline for where the page went wrong, and
-        asks you to look when it cannot see.
+        Load a session, then ask what went wrong — at the exact millisecond it happened. When the agent
+        cannot see, it asks you to look.
       </p>
 
-      <section className="mt-3 border-l border-line pl-2.5">
+      <section className="mt-3 rounded-sm border border-line bg-panel/60 px-2.5 py-2">
         <h3 className="flex items-center gap-1.5 font-medium text-ink">
           <Layers aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           This panel is a DOM, not a video
         </h3>
         <p className="mt-0.5 text-muted">
-          A recording is a stream of mutation events, and replaying it rebuilds the page as a live
-          document — so every node is really present and really queryable at whichever millisecond the
-          playhead is on. That is why the tools register on a page in your browser rather than behind an
-          API: nothing on a server holds this DOM.
+          Replaying a recording rebuilds the page as a live document. Every node is really there, and
+          queryable, at whichever millisecond the playhead is on. That is why the tools register in this
+          browser tab rather than behind an API: nothing on a server holds this DOM.
         </p>
       </section>
 
@@ -59,6 +58,7 @@ export function StageEmptyState() {
           <CirclePlay aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Load a recording
         </h3>
+        <p className="mt-0.5 text-meta text-faint">Three samples. One click each.</p>
 
         <ul className="mt-1.5 space-y-1">
           {SAMPLE_RECORDINGS.map((sample) => (
@@ -71,24 +71,32 @@ export function StageEmptyState() {
                 type="button"
                 onClick={() => load(sample)}
                 disabled={loadingId !== null}
-                className="flex w-full flex-col items-start gap-y-0.5 rounded-sm border border-line-strong px-2 py-1 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50 sm:flex-row sm:items-baseline sm:gap-x-2"
+                className="flex w-full items-start gap-2 rounded-sm border border-line-strong bg-raised/40 px-2 py-1.5 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50"
               >
-                <span className="shrink-0 font-mono font-medium text-ink">{sample.id}</span>
-                <span className="text-label leading-snug text-muted">
-                  {sample.id === loadingId ? (
-                    /*
-                      The same dot the header's picker shows, for the same reason: this is the one wait in
-                      the app the human did not choose to sit through. It settles solid under reduced
-                      motion, and "loading…" is what carries the state in either case.
-                    */
-                    <span className="inline-flex items-center gap-1.5">
-                      <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
-                      loading…
-                    </span>
-                  ) : (
-                    sample.blurb
-                  )}
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono font-medium text-ink">{sample.id}</span>
+                  <span className="mt-0.5 block text-label leading-snug text-muted">
+                    {sample.id === loadingId ? (
+                      /*
+                        The same dot the header's picker shows, for the same reason: this is the one wait in
+                        the app the human did not choose to sit through. It settles solid under reduced
+                        motion, and "loading…" is what carries the state in either case.
+                      */
+                      <span className="inline-flex items-center gap-1.5">
+                        <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+                        loading…
+                      </span>
+                    ) : (
+                      sample.blurb
+                    )}
+                  </span>
                 </span>
+                <CirclePlay
+                  aria-hidden
+                  size={16}
+                  strokeWidth={1.75}
+                  className="mt-0.5 shrink-0 text-faint"
+                />
               </button>
             </li>
           ))}
@@ -110,17 +118,23 @@ export function StageEmptyState() {
           <Plug aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Getting WebMCP
         </h3>
-        <ul className="mt-1 space-y-0.5 text-muted">
-          <li>
-            <span className="text-ink">ChatGPT desktop</span>, in its in-app browser — works as it
-            comes.
+        <ul className="mt-1 space-y-1 text-muted">
+          <li className="flex gap-1.5">
+            <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted" />
+            <span>
+              <span className="text-ink">ChatGPT desktop</span>, in its in-app browser — works as it
+              comes.
+            </span>
           </li>
-          <li>
-            <span className="text-ink">Chrome 149+</span> — turn on{' '}
-            <code className="text-ink">chrome://flags/#enable-webmcp-testing</code>, then reload.
+          <li className="flex gap-1.5">
+            <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted" />
+            <span>
+              <span className="text-ink">Chrome 149+</span> — turn on{' '}
+              <code className="text-ink">chrome://flags/#enable-webmcp-testing</code>, then reload.
+            </span>
           </li>
         </ul>
-        <p className="mt-1 text-faint">
+        <p className="mt-1.5 text-meta text-faint">
           The bar at the top of the window says which of those you are on, and whether the sixteen tools
           registered. Everything below works without WebMCP; only the agent needs it.
         </p>

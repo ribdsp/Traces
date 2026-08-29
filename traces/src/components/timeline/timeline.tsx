@@ -1,5 +1,6 @@
 'use client'
 
+import { Timer } from 'lucide-react'
 import { useState } from 'react'
 import { formatSeconds } from '@/components/ui/format-time'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
@@ -75,6 +76,9 @@ function tickIntervalFor(durationMs: number): number {
  */
 const MINOR_TICKS_PER_LABEL = 5
 
+/** Evenly spaced decorative ticks for the empty axis. Percents, not milliseconds: there is no duration yet. */
+const GHOST_TICKS = [0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100] as const
+
 /** Below this, a pointer move is not a new reading — it is the same instant, one pixel over. */
 const HOVER_RESOLUTION_MS = 50
 
@@ -86,20 +90,41 @@ export function Timeline() {
 
   /**
    * The empty state is a sentence rather than a blank bar. A grey strip under the player reads as a
-   * timeline that failed to draw, and the one thing worth saying here is what this axis is *for* —
-   * it is the collaboration claim, and it is legible before any data arrives.
+   * timeline that failed to draw. Name the condition first — nothing is loaded — then the next
+   * action, then what this axis is *for*. The collaboration claim is still the point, but it is
+   * illegible if the reader cannot tell why the strip is blank.
    */
   if (!recording) {
     return (
       <div
-        className="flex shrink-0 items-center justify-center border-t border-line px-6"
+        className="relative flex shrink-0 items-center justify-center overflow-hidden border-t border-line bg-base px-6"
         style={{ height: TIMELINE_HEIGHT_PX }}
       >
-        <p className="text-center text-meta text-muted">
-          The shared timeline appears here once a recording is loaded.
-          <span className="mt-0.5 block text-faint">
-            Everything you mark and everything the agent finds lands on this one axis, labelled by who
-            found it.
+        {/*
+          A ghost of the loaded axis, so this strip reads as a timeline that is waiting rather than one
+          that failed to draw. Decorative, so it is hidden from assistive tech; the sentence below is the
+          name of the state.
+        */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-x-0 top-0 h-[17px]">
+            {GHOST_TICKS.map((at) => (
+              <span
+                key={at}
+                className={`absolute top-0 w-px bg-line ${at % 25 === 0 ? 'h-1.5 bg-line-strong' : 'h-[3px]'}`}
+                style={{ left: `${at}%` }}
+              />
+            ))}
+          </div>
+          <div className="absolute inset-x-3 bottom-2 h-1 rounded-full bg-line" />
+        </div>
+        <p className="relative flex max-w-xl flex-col items-center text-center text-body text-muted">
+          <span className="flex items-center gap-1.5 font-medium text-ink">
+            <Timer aria-hidden size={14} strokeWidth={1.75} className="text-muted" />
+            Nothing on this timeline yet — no recording is loaded.
+          </span>
+          <span className="mt-0.5 text-meta text-faint">
+            Load a sample from the list above. Your marks and the agent's findings will then share this
+            axis, labelled by who found them.
           </span>
         </p>
       </div>
