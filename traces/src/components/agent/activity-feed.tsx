@@ -1,11 +1,12 @@
 'use client'
 
+import { History } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatAgo, useWallClock } from '@/components/ui/use-clock'
 import { SectionHeading } from '@/components/ui/section-heading'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
-import type { ActivityEntry } from '@/types/domain'
+import type { ActivityEntry, Author } from '@/types/domain'
 
 /**
  * A running account of who did what.
@@ -29,7 +30,17 @@ import type { ActivityEntry } from '@/types/domain'
  *     for: the human can revert the agent, and the agent cannot revert the human.
  *   - an empty state that says what will appear here. "No activity" describes the widget; this describes the
  *     mechanism, and the mechanism is the thing being demonstrated.
+ *   - a 2px rail down the left of every row in its author's colour. This is the surface that proves two
+ *     parties are working on one session, and a reader should be able to see the interleaving from across
+ *     the room without reading a word of it. The badge stays: the rail is the pattern, the word is the fact,
+ *     and nothing here may depend on telling violet from blue.
  */
+
+/** Authorship, as an edge. The same two colours as the badge, which is the only other place they mean this. */
+const RAILS: Record<Author, string> = {
+  human: 'border-human',
+  agent: 'border-agent',
+}
 
 /** Within this many pixels of the top counts as "reading the newest", so the list keeps following. */
 const AT_TOP_PX = 8
@@ -65,9 +76,11 @@ export function ActivityFeed() {
       of ground does: everything above it is open work, everything on this surface already happened.
     */
     <section className="flex min-h-[8rem] flex-1 flex-col bg-panel p-3">
-      <SectionHeading rank="record" label="Activity">
+      <SectionHeading rank="record" label="Activity" icon={History}>
         {activity.length > 0 ? (
-          <span className="ml-auto font-mono text-[10px] text-faint">{activity.length}</span>
+          <span className="ml-auto font-mono text-label tabular-nums text-faint">
+            {activity.length}
+          </span>
         ) : null}
       </SectionHeading>
 
@@ -89,8 +102,10 @@ export function ActivityFeed() {
 
 function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
   return (
-    <li className="flex items-baseline gap-1 text-xs leading-relaxed text-muted">
-      <span className="min-w-0">{entry.description}</span>
+    <li
+      className={`flex items-baseline gap-1 border-l-2 pl-1.5 text-body leading-relaxed ${RAILS[entry.author]}`}
+    >
+      <span className="min-w-0 text-ink">{entry.description}</span>
       <AuthorBadge author={entry.author} />
 
       <span className="ml-auto flex shrink-0 items-baseline gap-1.5 pl-1">
@@ -99,7 +114,7 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
           the build could not have made.
         */}
         <span
-          className="font-mono text-[10px] text-faint"
+          className="font-mono text-label tabular-nums text-faint"
           title={new Date(entry.at).toLocaleTimeString()}
         >
           {now === null ? '' : formatAgo(entry.at, now)}
@@ -110,7 +125,7 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
             type="button"
             onClick={() => sessionActions().undo(entry.id)}
             title="Undo exactly this contribution. Everything else the agent did stays."
-            className="text-[10px] uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
+            className="rounded-sm text-label uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink"
           >
             undo
           </button>
@@ -122,7 +137,7 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
 
 function EmptyFeed() {
   return (
-    <p className="text-[11px] leading-relaxed text-faint">
+    <p className="text-meta leading-relaxed text-faint">
       Every action lands here as it happens, labelled with who took it — the agent seeking, bisecting and
       annotating, and you marking, rejecting and answering. Anything the agent did can be undone from its own
       line.

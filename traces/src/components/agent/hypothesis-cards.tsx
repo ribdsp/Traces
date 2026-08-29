@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, X } from 'lucide-react'
+import { Check, FlaskConical, X } from 'lucide-react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
 import { SectionHeading } from '@/components/ui/section-heading'
@@ -32,16 +32,42 @@ import type { Hypothesis, HypothesisStatus } from '@/types/domain'
  *   - promoted cards stay promoted and keep the human's accent; rejected ones fade and strike through rather
  *     than vanishing, so what was considered and set aside is still readable
  *   - evidence chips seek, and carry their `note` — a bare timestamp is not evidence of anything
+ *   - each card sits on its own ground rather than inside a hairline box, and the rank digit is right-aligned
+ *     in a fixed column so five claims start on the same pixel. Both are the table treatment that survives
+ *     this content; see below for the part that does not.
+ *
+ * Not a `<table>`, and that is measured rather than preferred. The columns would be rank, claim, confidence
+ * and verdict; in a 380px panel the three fixed ones cost about 220px between them, which leaves the claim —
+ * a sentence — roughly fifteen characters a line. A grid whose one prose column is a chimney is less legible
+ * than the stack, not more, so the numeric and striping conventions carry over and the element does not.
+ * `report-draft.tsx` is a real table, because its rows genuinely are short and its columns genuinely align.
  *
  * Not implemented, deliberately: clicking a card to highlight *all* of its evidence on the timeline at once.
  * That needs a piece of cross-component state ("which hypothesis is selected") that `SessionState` has no
  * slot for and that is frozen. Each chip seeks on its own, which costs one click per point instead of one.
  */
 
-const TREATMENTS: Record<HypothesisStatus, { card: string; text: string; tag: string | null }> = {
-  proposed: { card: 'border-line', text: 'text-ink', tag: null },
-  promoted: { card: 'border-human/50 bg-human/5', text: 'text-ink', tag: 'promoted' },
-  rejected: { card: 'border-panel opacity-50', text: 'text-muted line-through', tag: 'rejected' },
+/**
+ * `bg` is the card's ground. A surface rather than a border, because five hairline boxes stacked in a narrow
+ * column read as a fence and the thing worth seeing is which one the human has already ruled on.
+ */
+const TREATMENTS: Record<
+  HypothesisStatus,
+  { card: string; text: string; tag: string | null; chip: string }
+> = {
+  proposed: { card: 'border-line bg-panel/40', text: 'text-ink', tag: null, chip: '' },
+  promoted: {
+    card: 'border-human/50 bg-human/5',
+    text: 'text-ink',
+    tag: 'promoted',
+    chip: 'bg-human/15 text-human',
+  },
+  rejected: {
+    card: 'border-line bg-panel/20 opacity-60',
+    text: 'text-muted line-through',
+    tag: 'rejected',
+    chip: 'bg-raised text-muted',
+  },
 }
 
 export function HypothesisCards() {
@@ -55,9 +81,9 @@ export function HypothesisCards() {
 
   return (
     <section className="border-b border-line p-3">
-      <SectionHeading label="Hypotheses">
+      <SectionHeading label="Hypotheses" icon={FlaskConical}>
         {undecided > 0 ? (
-          <span className="ml-auto text-right text-[10px] text-warn/80">
+          <span className="ml-auto pl-2 text-right text-label leading-tight text-warn/90">
             {undecided === hypotheses.length
               ? 'the agent is waiting on your call'
               : `${undecided} still undecided`}
@@ -65,7 +91,7 @@ export function HypothesisCards() {
         ) : null}
       </SectionHeading>
 
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {hypotheses.map((hypothesis, index) => (
           <HypothesisCard key={hypothesis.id} hypothesis={hypothesis} position={index + 1} />
         ))}
@@ -82,17 +108,21 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
   const confidence = Math.min(Math.max(hypothesis.confidence, 0), 1)
 
   return (
-    <li className={`border p-2 ${treatment.card}`}>
+    <li className={`rounded-md border p-2 ${treatment.card}`}>
       <div className="flex items-baseline gap-1.5">
-        <span className="font-mono text-[10px] text-muted">{position}</span>
-        <p className={`text-xs leading-relaxed ${treatment.text}`}>{hypothesis.text}</p>
+        {/* Right-aligned in a fixed column: the rank is a number in a list of numbers, and 10 must not
+            push the tenth claim a character further in than the first nine. */}
+        <span className="w-3 shrink-0 text-right font-mono text-label tabular-nums text-muted">
+          {position}
+        </span>
+        <p className={`text-body leading-relaxed ${treatment.text}`}>{hypothesis.text}</p>
         <AuthorBadge author={hypothesis.author} />
       </div>
 
-      <div className="mt-1.5 flex items-center gap-1.5">
-        <span className="text-[9px] uppercase tracking-wide text-faint">confidence</span>
+      <div className="mt-1.5 flex items-center gap-1.5 pl-[1.125rem]">
+        <span className="text-label uppercase tracking-wide text-faint">confidence</span>
         <span
-          className="h-1 w-16 bg-raised"
+          className="h-1.5 w-16 shrink-0 rounded-full bg-raised"
           title={`The agent's own confidence in this explanation, relative to the others it proposed (${confidence.toFixed(2)} of 1). Its claim, not a measurement.`}
         >
           {/*
@@ -101,21 +131,25 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
           */}
           <span
             aria-hidden
-            className="block h-1 bg-agent/70"
+            className="block h-1.5 rounded-full bg-agent"
             style={{ width: `${confidence * 100}%` }}
           />
         </span>
         {treatment.tag ? (
           /*
-            The verdict, as a glyph and a word. Both tags were `muted` and the same size, so telling a promoted
-            card from a rejected one down a stack of five meant reading two words that share four letters. The
-            glyph is the status; `tag` is non-null for exactly the two decided states, so the pair is complete.
+            The verdict, as a glyph and a word on its own ground. Both tags used to be `muted` at the same
+            size, so telling a promoted card from a rejected one down a stack of five meant reading two words
+            that share four letters. `promoted` takes `human` because a person is what promoted it — the same
+            authorship claim the card's border already makes — and `rejected` stays neutral, because a set-aside
+            explanation is not a failure and `error` would say it was.
           */
-          <span className="ml-auto flex items-center gap-0.5 text-[9px] uppercase tracking-wide text-muted">
+          <span
+            className={`ml-auto flex shrink-0 items-center gap-0.5 rounded-sm px-1 text-label font-medium uppercase tracking-wide ${treatment.chip}`}
+          >
             {hypothesis.status === 'promoted' ? (
-              <Check aria-hidden size={12} strokeWidth={1.5} />
+              <Check aria-hidden size={12} strokeWidth={2} />
             ) : (
-              <X aria-hidden size={12} strokeWidth={1.5} />
+              <X aria-hidden size={12} strokeWidth={2} />
             )}
             {treatment.tag}
           </span>
@@ -123,44 +157,51 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
       </div>
 
       {hypothesis.evidence.length > 0 ? (
-        <ul className="mt-1.5 flex flex-wrap gap-1">
+        <ul className="mt-1.5 flex flex-wrap gap-1 pl-[1.125rem]">
           {hypothesis.evidence.map((item, itemIndex) => (
             <li key={`${item.atMs}-${itemIndex}`}>
+              {/*
+                A raised chip with a lighter border, which is what everything else clickable in this app
+                looks like. It used to be a hairline box on the card's own ground — indistinguishable from
+                the label beside it, and the one control here whose whole purpose is to invite a click.
+              */}
               <button
                 type="button"
                 onClick={() => sessionActions().setCurrentTime(item.atMs, 'human')}
                 title={`Seek to ${item.atMs}ms — ${item.note}`}
-                className="flex items-baseline gap-1 border border-line px-1 py-0.5 text-left hover:border-faint focus-visible:border-ink focus-visible:outline-none"
+                className="flex items-baseline gap-1 rounded-sm border border-line-strong bg-raised px-1 py-0.5 text-left shadow-raised hover:border-faint"
               >
                 {/*
                   `ink`, not `human`: a seek is an affordance both parties use, and spending an authorship
                   token on one would make it decorative. The border and the mono type carry the link.
                 */}
-                <span className="font-mono text-[10px] text-ink">{formatSeconds(item.atMs)}</span>
-                <span className="text-[10px] text-muted">{item.note}</span>
+                <span className="font-mono text-label tabular-nums text-ink">
+                  {formatSeconds(item.atMs)}
+                </span>
+                <span className="text-label text-muted">{item.note}</span>
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-1.5 text-[10px] text-faint">
+        <p className="mt-1.5 pl-[1.125rem] text-label text-faint">
           No evidence attached — nothing on the timeline backs this one up yet.
         </p>
       )}
 
-      <div className="mt-2 flex gap-1.5">
+      <div className="mt-2 flex gap-1.5 pl-[1.125rem]">
         <Verdict
           label="promote"
           active={hypothesis.status === 'promoted'}
           decided={decided}
-          activeClass="border-human/60 text-human"
+          activeClass="border-human/60 bg-human/10 text-human"
           onClick={() => sessionActions().promoteHypothesis(hypothesis.id, 'human')}
         />
         <Verdict
           label="reject"
           active={hypothesis.status === 'rejected'}
           decided={decided}
-          activeClass="border-faint text-ink"
+          activeClass="border-faint bg-raised text-ink"
           onClick={() => sessionActions().rejectHypothesis(hypothesis.id, 'human')}
         />
       </div>
@@ -193,10 +234,10 @@ function Verdict({
             ? `Change the record to ${label}d. The agent already has your first answer — this does not ask it again.`
             : `Mark this ${label}d. This is what the agent's call is waiting for.`
       }
-      className={`border px-1.5 py-0.5 text-[10px] uppercase tracking-wide focus-visible:border-ink focus-visible:outline-none ${
+      className={`rounded-sm border px-2 py-0.5 text-label font-medium uppercase tracking-wide ${
         active
           ? `${activeClass} cursor-default`
-          : 'border-line text-muted hover:border-faint hover:text-ink'
+          : 'border-line-strong bg-raised text-muted shadow-raised hover:border-faint hover:text-ink'
       }`}
     >
       {label}
