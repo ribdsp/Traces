@@ -136,7 +136,7 @@ export function MarkPointOverlay() {
               key={choice}
               type="button"
               onClick={() => answer(choice)}
-              className="flex items-baseline gap-1.5 rounded-sm border border-line-strong bg-raised px-2 py-1 text-body text-ink shadow-raised transition hover:border-warn/60 focus-visible:border-warn"
+              className="flex items-baseline gap-1.5 rounded-sm border border-line-strong bg-raised px-2 py-1 text-body text-ink shadow-raised hover:border-warn/60 focus-visible:border-warn"
             >
               {/* 10px is below the type floor and allowed to be: it is a key cap, not text to read. */}
               <span className="font-mono text-micro text-faint">{index + 1}</span>
@@ -152,7 +152,7 @@ export function MarkPointOverlay() {
             type="button"
             onClick={() => sessionActions().clearAsk()}
             title="Close the question without answering. The agent is told you skipped it."
-            className="ml-auto rounded-sm px-1 text-label uppercase tracking-wide text-muted transition hover:text-ink focus-visible:bg-raised focus-visible:text-ink"
+            className="ml-auto rounded-sm px-1 text-label uppercase tracking-wide text-muted hover:text-ink focus-visible:bg-raised focus-visible:text-ink"
           >
             skip
           </button>

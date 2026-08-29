@@ -71,7 +71,7 @@ export function StageEmptyState() {
                 type="button"
                 onClick={() => load(sample)}
                 disabled={loadingId !== null}
-                className="flex w-full flex-col items-start gap-y-0.5 rounded-sm border border-line-strong px-2 py-1 text-left transition hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50 sm:flex-row sm:items-baseline sm:gap-x-2"
+                className="flex w-full flex-col items-start gap-y-0.5 rounded-sm border border-line-strong px-2 py-1 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50 sm:flex-row sm:items-baseline sm:gap-x-2"
               >
                 <span className="shrink-0 font-mono font-medium text-ink">{sample.id}</span>
                 <span className="text-label leading-snug text-muted">

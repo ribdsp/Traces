@@ -193,10 +193,16 @@ disclosure stays keyboard-operable.
 ### Motion is for four things
 
 A blocking gate waiting, a claimed task working, the bisect probe sequence arriving, a recording
-loading. Nothing else moves — no page-load animation, no scroll effect, no hover lift. Because
-`globals.css` zeroes animation duration under `prefers-reduced-motion`, **any state signalled by
-movement must also be legible standing still**: two icons rather than one rotated, a colour change
-under the pulse. `webmcp-badge.tsx`'s chevron is the reference for that pattern.
+loading. Nothing else moves — no page-load animation, no scroll effect, no hover lift.
+
+Under `prefers-reduced-motion` `globals.css` caps `animation-iteration-count` at 1, which lands every
+`animate-pulse` on its last keyframe — `opacity: 1`, a solid dot. Note *which* declaration does that
+work: zeroing `animation-duration` alone, which is the usual reset and was what this file used to
+claim, does not stop an `infinite` animation at all — it runs the same cycle a hundred thousand times a
+second. So **any state signalled by movement must also be legible standing still**: two icons rather
+than one rotated, a word beside the dot, a colour that stays. `webmcp-badge.tsx`'s chevron is the
+reference for the pattern, and the dot may stop moving but must never disappear — in all four places it
+is the thing saying something is still happening.
 
 ---
 

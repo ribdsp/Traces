@@ -200,8 +200,12 @@ export function RecordingPicker() {
           aria-activedescendant={optionId(SAMPLE_RECORDINGS[activeIndex]?.id ?? '')}
           onKeyDown={onListKeyDown}
           /* `raised` and a lighter border rather than a drop shadow — see the elevation note in
-             CONTRIBUTING.md. `z-30` clears the docked WebMCP badge, which sits at 20. */
-          className="absolute right-0 top-[calc(100%+4px)] z-30 max-h-[60vh] w-[24rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-md border border-line-strong bg-raised p-1 shadow-raised focus-visible:outline-none"
+             CONTRIBUTING.md. `z-30` clears the docked WebMCP badge, which sits at 20. The panel keeps the
+             global focus outline: it is the element that actually holds focus while open — options are
+             driven by `aria-activedescendant`, not by moving focus — so suppressing it would leave a
+             keyboard user with no indication of where they are, and the row highlight cannot stand in for
+             one because `onMouseEnter` sets it too. */
+          className="absolute right-0 top-[calc(100%+4px)] z-30 max-h-[60vh] w-[24rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-md border border-line-strong bg-raised p-1 shadow-raised"
         >
           {SAMPLE_RECORDINGS.map((sample, index) => {
             const isOpen = sample.id === openId
@@ -221,9 +225,11 @@ export function RecordingPicker() {
               >
                 <p className="flex items-baseline gap-1.5">
                   {isOpen ? (
-                    <Check aria-hidden size={12} strokeWidth={2} className="shrink-0 text-ok" />
+                    <Check aria-hidden size={14} strokeWidth={2} className="shrink-0 text-ok" />
                   ) : (
-                    <span aria-hidden className="w-3 shrink-0" />
+                    /* Holds the tick's column so the ids line up whether or not one is open. Its width and
+                       the indent below are the icon's 14px plus the 6px `gap-1.5`. */
+                    <span aria-hidden className="w-3.5 shrink-0" />
                   )}
                   <span
                     className={`min-w-0 truncate font-mono text-body ${isOpen ? 'text-ink' : 'text-muted'}`}
@@ -237,7 +243,7 @@ export function RecordingPicker() {
                   ) : null}
                 </p>
 
-                <p className="mt-0.5 pl-[1.125rem] text-meta leading-snug text-muted">
+                <p className="mt-0.5 pl-[1.25rem] text-meta leading-snug text-muted">
                   {sample.blurb}
                 </p>
 
@@ -245,7 +251,7 @@ export function RecordingPicker() {
                     count comes from `meta.eventCount`, which is the number `read_session_meta` hands
                     the agent, so a human comparing the two is comparing the same figure. */}
                 {isOpen && recording ? (
-                  <p className="mt-1 flex items-center gap-1.5 pl-[1.125rem] font-mono text-label tabular-nums text-faint">
+                  <p className="mt-1 flex items-center gap-1.5 pl-[1.25rem] font-mono text-label tabular-nums text-faint">
                     <span>{formatSeconds(recording.durationMs)}</span>
                     <span aria-hidden>·</span>
                     <span>{recording.meta.eventCount} events</span>
@@ -272,7 +278,7 @@ export function RecordingPicker() {
           role="alert"
           className="absolute right-0 top-[calc(100%+4px)] z-20 flex w-[24rem] max-w-[calc(100vw-1.5rem)] items-start gap-1.5 rounded-md border border-error/50 bg-error/10 px-2 py-1.5 text-meta leading-snug text-error"
         >
-          <TriangleAlert aria-hidden size={13} strokeWidth={1.75} className="mt-px shrink-0" />
+          <TriangleAlert aria-hidden size={14} strokeWidth={1.75} className="mt-px shrink-0" />
           <span>
             <span className="font-mono">{error.id}</span> did not load: {error.message}.{' '}
             <span className="text-error/70">

@@ -126,8 +126,13 @@ export function ResizableSplit({
       </section>
 
       {/*
-        `ink` for both the drag and the focus ring rather than the `human` token: this is a UI affordance,
+        `ink` for both the drag and the focus state rather than the `human` token: this is a UI affordance,
         not an authored contribution, and `human`/`agent` are reserved for saying who made something.
+
+        It keeps the global focus outline as well as changing colour. A 3px sliver going from grey to white
+        is a real signal, but it is the *same* signal as dragging, and it is three pixels — on a divider
+        that is the full height of the window the outline is what makes "I have focus here" legible from
+        across a room, which is the bar for a control whose only other operator is the arrow keys.
       */}
       <div
         role="separator"
@@ -141,7 +146,9 @@ export function ResizableSplit({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onKeyDown={onKeyDown}
-        className={`w-[3px] shrink-0 cursor-col-resize touch-none outline-none transition-colors ${
+        /* `transition-colors` explicitly: `globals.css` scopes its transition rule to elements that respond
+           to a pointer by tag or by `role`, and `separator` is not one of them. */
+        className={`w-[3px] shrink-0 cursor-col-resize touch-none transition-colors ${
           dragging ? 'bg-ink' : 'bg-line hover:bg-faint focus-visible:bg-ink'
         }`}
       />
