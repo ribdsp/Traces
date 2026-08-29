@@ -30,6 +30,15 @@ import type { Gate, GateResult } from '@/types/domain'
  * 8 s sits far enough under that ceiling to survive a slower host, and costs nothing: a human who is
  * already looking at the screen answers inside it, and one who isn't was always going to arrive by
  * ticket. Raising this back up trades a guaranteed reply for a slightly shorter happy path.
+ *
+ * Confirmed end to end from a real agent: this gate hands back `pending` at 9,997 ms measured from the
+ * agent's side, against 1,642 ms for a tool that resolves immediately — so the host costs about two
+ * seconds and the ceiling leaves roughly ten to spare.
+ *
+ * Measure with a *single* guard. An agent that races 5 s and then 10 s more reports 15.6 s for this
+ * same call, because the value surfaces at its next guard boundary rather than when the promise
+ * settles. That artefact is indistinguishable from latency the page is responsible for, and it will
+ * talk you into shortening a gate that was already fast enough.
  */
 export const GATE_TIMEOUT_MS = 8_000
 
