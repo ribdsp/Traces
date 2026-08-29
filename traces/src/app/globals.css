@@ -5,8 +5,9 @@
 /*
  *
  * Deliberately almost empty. The visual direction is carried by tailwind.config.ts (palette, type
- * scale) and src/app/fonts.ts (the Plex Sans / Plex Mono pair, and why); what is here is only what the
- * replay mechanism needs, plus the two globals that would otherwise be rediscovered at 2am.
+ * scale, radius, elevation) and src/app/fonts.ts (the Plex Sans / Plex Mono pair, and why); what is
+ * here is only what the replay mechanism needs, plus the few globals that would otherwise be
+ * rediscovered at 2am.
  *
  * One thing worth deciding early rather than late: this is an operations tool, so it wants density and
  * quiet — small type, tight rows, one accent that means something. Two accents are already in use and
@@ -15,6 +16,49 @@
 
 :root {
   color-scheme: dark;
+}
+
+@layer base {
+  /*
+   * The focus ring, once, for everything.
+   *
+   * Written as a global rule rather than a `.focus-ring` class because "apply it everywhere" and "each
+   * of sixty interactive elements remembers a class" are different promises, and only one of them
+   * survives the next component. Anything focusable is covered the moment it exists, including the
+   * elements the replay iframe's chrome puts on the page and the ones nobody has written yet.
+   *
+   * `outline`, not Tailwind's `ring-*`: a ring's offset is painted in `--tw-ring-offset-color`, which
+   * has to be told which surface it is sitting on, and this app has three (`base`, `panel`, `raised`)
+   * stacked within a few pixels of each other. An outline's offset is simply transparent, so the same
+   * declaration is correct on all three. `ink` rather than an accent hue, because focus is neither a
+   * severity nor an authorship claim and the two colour families here both already mean something.
+   */
+  :focus-visible {
+    outline: 2px solid theme('colors.ink');
+    outline-offset: 1px;
+  }
+
+  /*
+   * Interactive surfaces settle into their hover and focus colours instead of snapping. 120ms is the
+   * config default (see `transitionDuration` there for the reasoning); this only names the properties,
+   * which are colour and border and nothing else — no size, no position, no opacity on layout.
+   *
+   * Scoped to elements that respond to a pointer, so a repaint of the timeline is not a hundred
+   * simultaneous transitions. The `[role]` cases catch the dropdown options, which are `li`s.
+   */
+  button,
+  a,
+  summary,
+  input,
+  select,
+  textarea,
+  [role='option'],
+  [role='button'] {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color,
+      fill, stroke;
+    transition-duration: 120ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
 
 /*

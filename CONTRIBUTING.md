@@ -154,6 +154,50 @@ marketing voice in an ops tool.
 Empty, loading, and error states are all three required, not just the one you happened to hit while
 developing.
 
+### The type scale has a floor, and the floor is 13px
+
+Ask for a role, not a size: `text-micro` `text-label` `text-meta` `text-body` `text-title`, defined in
+`tailwind.config.ts`. Never write `text-[11px]` in a component — a hundred hardcoded sizes cannot be
+raised together, and this scale has already had to move once.
+
+| Token | Size | For |
+|---|---|---|
+| `text-micro` | 10px | A glyph and nothing else: a `kbd` key cap, a timeline tick label, an ordinal. Never a phrase. |
+| `text-label` | 11px | Uppercase section labels, status chips, author badges, counts. |
+| `text-meta` | 12px | Mono metadata, secondary notes. |
+| `text-body` | 13px | **The floor for any sentence a person has to read.** |
+| `text-title` | 15px | The wordmark, and a title that has to win against the body under it. |
+
+Why a floor at all: this app is demonstrated through a screen recording, and a compressed 1080p frame
+scaled into someone else's player turns 10px body copy into grey texture. Density comes from padding
+and line-height, which cost nothing on video; it does not come from shrinking the words.
+
+### Radius stops at 6px, and depth is never a shadow
+
+`rounded-sm` (3px) for controls and chips, `rounded-md` (6px) for panels, `rounded-full` for dots
+only. Larger values are not in the theme, so `rounded-lg` and friends do not resolve — the scale is
+*replaced* rather than extended, which turns "no oversized rounded cards" above from a request into a
+build error.
+
+`boxShadow` is replaced the same way and holds only `shadow-panel` / `shadow-raised`, both inset top
+highlights. A raised surface is lit along its top edge and paired with `border-line-strong`; nothing
+in an instrument floats above the chassis.
+
+### Focus is global, so do not suppress it
+
+`globals.css` puts a 2px `ink` outline on `:focus-visible` for every element at once. Do not add
+`focus-visible:outline-none` to get a custom treatment — change the background alongside the ring if
+you want more, but every interactive element keeps a visible focus state, and every dropdown and
+disclosure stays keyboard-operable.
+
+### Motion is for four things
+
+A blocking gate waiting, a claimed task working, the bisect probe sequence arriving, a recording
+loading. Nothing else moves — no page-load animation, no scroll effect, no hover lift. Because
+`globals.css` zeroes animation duration under `prefers-reduced-motion`, **any state signalled by
+movement must also be legible standing still**: two icons rather than one rotated, a colour change
+under the pulse. `webmcp-badge.tsx`'s chevron is the reference for that pattern.
+
 ---
 
 ## Pull requests
