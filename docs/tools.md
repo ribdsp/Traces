@@ -503,6 +503,12 @@ roughly 20 s, so the host gave up before the gate returned its ticket — the ca
 human's decision was recorded, but the agent received neither. Re-measure before targeting a host with
 a different tolerance, and keep the value comfortably under whatever you measure.
 
+Measured from a real agent, this gate returns `pending` at 9,997 ms against 1,642 ms for a tool that
+resolves immediately — about two seconds of host overhead, leaving roughly ten before the ceiling. Use
+a **single** timeout guard when you measure: an agent that races 5 s and then 10 s more reports 15.6 s
+for the same call, because the value surfaces at its next guard boundary rather than when the promise
+settles, and that artefact looks exactly like latency the page is responsible for.
+
 ### 12. `ask_human_visual({ question, choices, hintAtMs?, ticket? })`
 
 ```
