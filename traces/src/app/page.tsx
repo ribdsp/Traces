@@ -1,6 +1,7 @@
 'use client'
 
-import { Keyboard } from 'lucide-react'
+import { ArrowLeftRight, Keyboard, KeyboardOff, ListTodo, Play, SlidersHorizontal } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { AgentLane, AGENT_LANE_INPUT_ID } from '@/components/agent/agent-lane'
 import { ActivityFeed } from '@/components/agent/activity-feed'
@@ -50,21 +51,26 @@ import { TOOL_STATUS_SLOT_ID } from '@/components/ui/tool-status-banner'
 /** Bound below and listed in the header, so the legend cannot drift from what is actually handled. */
 const FOCUS_KEYS = { agent: 'a', player: 'p' } as const
 
+const GITHUB_URL = 'https://github.com/ribdsp/Traces'
+
 /**
  * Space and the arrows belong to `PlayerControls` — they are listed here because the legend is about the
  * keyboard, not about which component owns which key.
+ *
+ * `does` is the action in a short verb phrase, and `icon` is that action as a shape. The key caps stay
+ * text: a glyph for "space" is a puzzle, and the point of this list is to be pressed, not decoded.
  */
-const LEGEND = [
-  { keys: 'space', does: 'play' },
-  { keys: '←→', does: 'step' },
-  { keys: FOCUS_KEYS.agent, does: 'agent lane' },
-  { keys: FOCUS_KEYS.player, does: 'player' },
-  { keys: 'esc', does: 'release' },
-] as const
+const LEGEND: readonly { keys: readonly string[]; short: string; does: string; icon: LucideIcon }[] = [
+  { keys: ['space'], short: 'Play', does: 'Play / pause', icon: Play },
+  { keys: ['←', '→'], short: 'Step', does: 'Step 100ms', icon: ArrowLeftRight },
+  { keys: [FOCUS_KEYS.agent], short: 'Queue', does: 'Focus queue', icon: ListTodo },
+  { keys: [FOCUS_KEYS.player], short: 'Player', does: 'Focus player', icon: SlidersHorizontal },
+  { keys: ['esc'], short: 'Release', does: 'Release focus', icon: KeyboardOff },
+]
 
 /** Shared by both renderings of the legend, so the prose and the disclosure cannot disagree. */
 const LEGEND_TITLE =
-  'Keyboard: space plays and pauses, the arrows step 100ms (hold shift for a second), a focuses the agent lane, p focuses the scrubber, and escape hands the keyboard back to the player.'
+  'Keyboard: space plays and pauses, the arrows step 100ms (hold shift for a second), a focuses the task queue, p focuses the scrubber, and escape hands the keyboard back to the player.'
 
 /**
  * Whether a keystroke is part of something being written.
@@ -121,14 +127,24 @@ export default function Home() {
   return (
     <main className="flex min-h-0 flex-1 flex-col">
       <header className="relative flex shrink-0 items-center justify-between gap-3 border-b border-line bg-panel px-3 py-2">
-        <div className="flex min-w-0 items-baseline gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           {/*
             The wordmark is the one place in this app allowed to be a size larger than its neighbours.
             It is not decoration: a screen recording that opens on a grey instrument with no name on it
             is a recording nobody can attribute afterwards.
           */}
           <h1 className="shrink-0 text-title font-semibold tracking-tight text-ink">Traces</h1>
-          <span aria-hidden className="hidden h-3 w-px shrink-0 self-center bg-line-strong md:block" />
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            title="Traces on GitHub"
+            aria-label="Traces on GitHub"
+            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-sm border border-line-strong bg-raised text-muted shadow-raised hover:border-faint hover:text-ink"
+          >
+            <GithubMark />
+          </a>
+          <span aria-hidden className="hidden h-3 w-px shrink-0 bg-line-strong md:block" />
           {/*
             Short enough to sit at 900px without truncating, and hidden below `md` rather than clipped.
             The sentence that used to be here — the one that explained what interrogating a replay means —
@@ -186,7 +202,7 @@ export default function Home() {
  *
  * Two renderings of one `LEGEND`, because the narrow case is the common case: this is judged in the
  * ChatGPT desktop in-app browser, which is a window of arbitrary width, and the legend used to be
- * `hidden lg:flex` — so on the screen it most needed to teach, it taught nothing at all. Below `lg` it
+ * `hidden lg:flex` — so on the screen it most needed to teach, it taught nothing at all. Below `xl` it
  * collapses to a disclosure instead of vanishing.
  *
  * `<details>` rather than a button with state: it is keyboard-reachable and toggleable with no JavaScript
@@ -198,17 +214,17 @@ function ShortcutLegend() {
     <>
       <ul
         title={LEGEND_TITLE}
-        className="hidden shrink-0 items-center gap-2 text-label text-faint lg:flex"
+        className="hidden shrink-0 items-center gap-2.5 text-label text-faint xl:flex"
       >
         {LEGEND.map((item) => (
-          <li key={item.keys} className="flex items-center gap-1">
-            <LegendKey keys={item.keys} />
-            <span>{item.does}</span>
+          <li key={item.does} className="flex items-center gap-1">
+            <LegendKeys keys={item.keys} />
+            <span>{item.short}</span>
           </li>
         ))}
       </ul>
 
-      <details className="relative shrink-0 lg:hidden">
+      <details className="relative shrink-0 xl:hidden">
         <summary
           title={LEGEND_TITLE}
           className="flex cursor-pointer list-none items-center gap-1 rounded-sm border border-line-strong bg-raised px-1.5 py-0.5 text-label text-muted shadow-raised marker:content-none hover:border-faint hover:text-ink [&::-webkit-details-marker]:hidden"
@@ -226,11 +242,12 @@ function ShortcutLegend() {
           `raised` rather than a heavier border to lift the popover off the header. Drop shadows are out,
           so elevation here is carried by the surface token that exists for it.
         */}
-        <ul className="absolute right-0 top-[calc(100%+4px)] z-20 w-max space-y-1 rounded-md border border-line-strong bg-raised px-2 py-1.5 text-label text-muted shadow-raised">
+        <ul className="absolute right-0 top-[calc(100%+4px)] z-20 w-max min-w-[12.5rem] space-y-1 rounded-md border border-line-strong bg-raised px-2 py-1.5 text-label text-muted shadow-raised">
           {LEGEND.map((item) => (
-            <li key={item.keys} className="flex items-center gap-1.5">
-              <LegendKey keys={item.keys} />
-              <span>{item.does}</span>
+            <li key={item.does} className="flex items-center gap-2">
+              <LegendKeys keys={item.keys} />
+              <item.icon aria-hidden size={13} strokeWidth={1.75} className="shrink-0 text-muted" />
+              <span className="text-ink">{item.does}</span>
             </li>
           ))}
         </ul>
@@ -241,10 +258,26 @@ function ShortcutLegend() {
 
 /** 10px is the documented floor for a key cap and nothing else: `esc` set at 13px is wider than the
  *  word it labels, and the legend is five of them in a header that has to survive 720px. */
-function LegendKey({ keys }: { keys: string }) {
+function LegendKeys({ keys }: { keys: readonly string[] }) {
   return (
-    <kbd className="rounded-sm border border-line-strong bg-base px-1 font-mono text-micro text-muted">
-      {keys}
-    </kbd>
+    <span className="flex items-center gap-0.5">
+      {keys.map((key) => (
+        <kbd
+          key={key}
+          className="rounded-sm border border-line-strong bg-base px-1 font-mono text-micro text-muted"
+        >
+          {key}
+        </kbd>
+      ))}
+    </span>
+  )
+}
+
+/** Lucide dropped brand icons; this is the GitHub mark, sized to the 13px header controls. */
+function GithubMark() {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" width={13} height={13} fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+    </svg>
   )
 }

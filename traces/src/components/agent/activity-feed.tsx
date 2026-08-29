@@ -1,6 +1,6 @@
 'use client'
 
-import { History } from 'lucide-react'
+import { Bot, History, Undo2, User } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatAgo, useWallClock } from '@/components/ui/use-clock'
@@ -32,8 +32,9 @@ import type { ActivityEntry, Author } from '@/types/domain'
  *     mechanism, and the mechanism is the thing being demonstrated.
  *   - a 2px rail down the left of every row in its author's colour. This is the surface that proves two
  *     parties are working on one session, and a reader should be able to see the interleaving from across
- *     the room without reading a word of it. The badge stays: the rail is the pattern, the word is the fact,
- *     and nothing here may depend on telling violet from blue.
+ *     the room without reading a word of it. Authorship in this feed is an icon (with the word in
+ *     `sr-only`): the rail is the pattern, the shape is the fact, and nothing here may depend on telling
+ *     violet from blue.
  */
 
 /** Authorship, as an edge. The same two colours as the badge, which is the only other place they mean this. */
@@ -103,10 +104,10 @@ export function ActivityFeed() {
 function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
   return (
     <li
-      className={`flex items-baseline gap-1 border-l-2 pl-1.5 text-body leading-relaxed ${RAILS[entry.author]}`}
+      className={`flex items-center gap-1 border-l-2 pl-1.5 text-body leading-relaxed ${RAILS[entry.author]}`}
     >
       <span className="min-w-0 text-ink">{entry.description}</span>
-      <AuthorBadge author={entry.author} />
+      <AuthorBadge author={entry.author} variant="icon" />
 
       <span className="ml-auto flex shrink-0 items-baseline gap-1.5 pl-1">
         {/*
@@ -125,8 +126,9 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
             type="button"
             onClick={() => sessionActions().undo(entry.id)}
             title="Undo exactly this contribution. Everything else the agent did stays."
-            className="rounded-sm text-label uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink"
+            className="inline-flex items-center gap-0.5 rounded-sm text-label uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink"
           >
+            <Undo2 aria-hidden size={12} strokeWidth={1.75} />
             undo
           </button>
         ) : null}
@@ -137,10 +139,22 @@ function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
 
 function EmptyFeed() {
   return (
-    <p className="text-meta leading-relaxed text-faint">
-      Every action lands here as it happens, labelled with who took it — the agent seeking, bisecting and
-      annotating, and you marking, rejecting and answering. Anything the agent did can be undone from its own
-      line.
-    </p>
+    <div className="space-y-2">
+      <ul className="space-y-1">
+        <li className="flex items-center gap-1.5 text-body text-muted">
+          <User aria-hidden size={13} strokeWidth={1.75} className="shrink-0 text-human" />
+          <span className="sr-only">You</span>
+          <span>You mark, reject, and answer.</span>
+        </li>
+        <li className="flex items-center gap-1.5 text-body text-muted">
+          <Bot aria-hidden size={13} strokeWidth={1.75} className="shrink-0 text-agent" />
+          <span className="sr-only">Agent</span>
+          <span>The agent seeks, bisects, and annotates.</span>
+        </li>
+      </ul>
+      <p className="text-body leading-relaxed text-muted">
+        Each action lands here as it happens. Undo anything the agent did from its own line.
+      </p>
+    </div>
   )
 }

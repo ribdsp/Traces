@@ -1,6 +1,7 @@
 'use client'
 
-import { ListTodo } from 'lucide-react'
+import { Check, Circle, CircleHelp, ListTodo, MousePointerClick, Search } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatAgo, useWallClock } from '@/components/ui/use-clock'
@@ -56,10 +57,10 @@ export const AGENT_LANE_INPUT_ID = 'traces-agent-lane-input'
  * Each one is a real question about the `empty-province` sample, phrased the way the tools want to be
  * driven — a moment to find, then a claim to check.
  */
-const EXAMPLES = [
-  'Find when the province dropdown went empty',
-  'Check whether the submit button was ever enabled',
-  'Explain why the address form rejected a valid postcode',
+const EXAMPLES: readonly { text: string; icon: LucideIcon }[] = [
+  { text: 'Find when the province dropdown went empty', icon: Search },
+  { text: 'Check whether the submit button was ever enabled', icon: MousePointerClick },
+  { text: 'Explain why the address form rejected a valid postcode', icon: CircleHelp },
 ]
 
 /**
@@ -154,8 +155,14 @@ function TaskRow({ task, now }: { task: Task; now: number | null }) {
       className={`flex items-baseline gap-1.5 rounded-sm border-l-2 py-1 pl-2 pr-1.5 text-body ${treatment.rail} ${treatment.row}`}
     >
       <span
-        className={`shrink-0 rounded-sm px-1 font-mono text-label uppercase tracking-wide ${treatment.chip}`}
+        className={`inline-flex shrink-0 items-center gap-1 rounded-sm px-1 font-mono text-label uppercase tracking-wide ${treatment.chip}`}
       >
+        {task.status === 'open' ? (
+          <Circle aria-hidden size={10} strokeWidth={1.75} />
+        ) : null}
+        {task.status === 'done' ? (
+          <Check aria-hidden size={10} strokeWidth={2} />
+        ) : null}
         {task.status}
       </span>
 
@@ -166,7 +173,7 @@ function TaskRow({ task, now }: { task: Task; now: number | null }) {
         are what carry the state when the motion is gone.
       */}
       {task.status === 'claimed' ? (
-        <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-warn" />
+        <span aria-hidden className="h-1.5 w-1.5 shrink-0 self-center animate-pulse rounded-full bg-warn" />
       ) : null}
 
       <span className={`min-w-0 ${treatment.text}`}>{task.text}</span>
@@ -183,26 +190,27 @@ function TaskRow({ task, now }: { task: Task; now: number | null }) {
 
 function EmptyLane({ onPick }: { onPick: (text: string) => void }) {
   return (
-    <div className="mb-2 text-meta leading-relaxed text-faint">
+    <div className="mb-2 text-body leading-relaxed">
       <p className="text-muted">
-        Nothing queued — and nothing is polling for it either. An agent takes work from here by calling{' '}
+        Nothing in the queue. An agent takes work from here by calling{' '}
         <span className="font-mono text-ink">claim_next_task</span>, which{' '}
-        <span className="text-ink">blocks</span> instead of returning empty: whatever you type below is
-        what that call returns, at the moment you press Enter.
+        <span className="text-ink">blocks</span> until you press Enter — whatever you type below is what
+        that call returns.
       </p>
 
-      <p className="mt-1.5">Something worth handing over:</p>
+      <p className="mt-2 text-meta text-faint">Something worth handing over:</p>
 
-      <ul className="mt-1 space-y-0.5">
+      <ul className="mt-1 space-y-1">
         {EXAMPLES.map((example) => (
-          <li key={example}>
+          <li key={example.text}>
             <button
               type="button"
-              onClick={() => onPick(example)}
+              onClick={() => onPick(example.text)}
               title="Put this in the box below. It is not queued until you press Enter."
-              className="rounded-sm text-left text-meta text-muted underline decoration-dotted hover:text-ink"
+              className="flex w-full items-start gap-1.5 rounded-sm border border-line px-1.5 py-1 text-left text-meta text-muted hover:border-faint hover:bg-raised/60 hover:text-ink"
             >
-              {example}
+              <example.icon aria-hidden size={13} strokeWidth={1.75} className="mt-0.5 shrink-0 text-faint" />
+              <span>{example.text}</span>
             </button>
           </li>
         ))}
