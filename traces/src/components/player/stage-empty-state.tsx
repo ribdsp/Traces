@@ -1,7 +1,9 @@
 'use client'
 
-import { CirclePlay, Layers, Plug, TriangleAlert } from 'lucide-react'
+import { CirclePlay, FolderOpen, Layers, Plug, TriangleAlert } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { SAMPLE_RECORDINGS } from '@/components/ui/sample-recordings'
+import { useFileLoader } from '@/components/ui/use-file-loader'
 import { useSampleLoader } from '@/components/ui/use-sample-loader'
 
 /**
@@ -17,6 +19,10 @@ import { useSampleLoader } from '@/components/ui/use-sample-loader'
  *   3. how to get WebMCP at all, since on a browser without it nothing below is callable;
  *   4. a recording, in one click. Prose that ends without an action gets read once and then closed.
  *
+ * The recording can now be the reader's own, which is why this panel is also the drop target: someone
+ * arriving from the README with a file they just recorded has no reason to guess that the header holds a
+ * menu, and the largest empty rectangle on screen is the one they will aim at.
+ *
  * It also holds the long description that used to truncate in the header, and that is the right home for
  * it: it is onboarding, so it is wanted exactly when there is no recording and in the way once there is.
  * The header keeps a short standing subtitle — see `page.tsx`.
@@ -29,10 +35,51 @@ import { useSampleLoader } from '@/components/ui/use-sample-loader'
  * reports.
  */
 export function StageEmptyState() {
-  const { load, loadingId, error } = useSampleLoader()
+  const { load: loadSample, loadingId, error: sampleError } = useSampleLoader()
+  const { load: loadFile, loadingName, error: fileError } = useFileLoader()
+
+  /** See the picker for why the last attempt has to be tracked: two hooks, one alert. */
+  const [lastAttempt, setLastAttempt] = useState<'sample' | 'file' | null>(null)
+  /** A file is over the panel. Changes the control's border *and* its wording — see below. */
+  const [over, setOver] = useState(false)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const busy = loadingId !== null || loadingName !== null
+  const error = lastAttempt === 'file' ? fileError : sampleError
+
+  const takeFile = (file: File | undefined) => {
+    if (!file) return
+    setLastAttempt('file')
+    void loadFile(file)
+  }
 
   return (
-    <div className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-body leading-relaxed">
+    <div
+      /*
+        Dropping a file here loads it. `onDragOver` has to cancel or the browser never delivers `drop` to
+        this element at all — and `useFileLoader` installs a window-level cancel of its own, so that a
+        drop which *misses* this panel does nothing instead of navigating the tab away from the session.
+        The two are separate concerns: this one is the feature, that one is the guard.
+      */
+      onDragOver={(event) => {
+        event.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={(event) => {
+        /* `dragleave` also fires crossing into a child. Only a `relatedTarget` outside this element is
+           the cursor actually leaving the panel; without the check the affordance strobes on every row
+           boundary the cursor passes. */
+        const leaving = event.relatedTarget
+        if (!(leaving instanceof Node) || !event.currentTarget.contains(leaving)) setOver(false)
+      }}
+      onDrop={(event) => {
+        event.preventDefault()
+        setOver(false)
+        takeFile(event.dataTransfer.files[0])
+      }}
+      className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-body leading-relaxed"
+    >
       <h2 className="text-title font-semibold tracking-tight text-ink">
         Session replay an AI agent can interrogate
       </h2>
@@ -58,7 +105,9 @@ export function StageEmptyState() {
           <CirclePlay aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Load a recording
         </h3>
-        <p className="mt-0.5 text-meta text-faint">Three samples. One click each.</p>
+        <p className="mt-0.5 text-meta text-faint">
+          Three samples, one click each — or a recording of your own.
+        </p>
 
         <ul className="mt-1.5 space-y-1">
           {SAMPLE_RECORDINGS.map((sample) => (
@@ -69,8 +118,11 @@ export function StageEmptyState() {
               */}
               <button
                 type="button"
-                onClick={() => load(sample)}
-                disabled={loadingId !== null}
+                onClick={() => {
+                  setLastAttempt('sample')
+                  void loadSample(sample)
+                }}
+                disabled={busy}
                 className="flex w-full items-start gap-2 rounded-sm border border-line-strong bg-raised/40 px-2 py-1.5 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50"
               >
                 <span className="min-w-0 flex-1">
@@ -100,14 +152,82 @@ export function StageEmptyState() {
               </button>
             </li>
           ))}
+
+          {/*
+            Same row shape as the three above, prose title instead of a monospace stem so it does not
+            read as a fourth sample. The border change while a file is over the panel is not the whole
+            signal — the second line changes with it, because a dashed outline is a colour-and-shape cue
+            and one of those is not a state.
+          */}
+          <li>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+              className={`flex w-full items-start gap-2 rounded-sm border bg-raised/40 px-2 py-1.5 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50 ${
+                over ? 'border-dashed border-ink bg-raised/60' : 'border-line-strong'
+              }`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-ink">Load a file…</span>
+                <span className="mt-0.5 block text-label leading-snug text-muted">
+                  {loadingName !== null ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+                      loading…
+                    </span>
+                  ) : over ? (
+                    'Drop it anywhere on this panel.'
+                  ) : (
+                    'An rrweb recording from your own app, read in this tab and never uploaded — there is no server to upload it to.'
+                  )}
+                </span>
+              </span>
+              <FolderOpen
+                aria-hidden
+                size={16}
+                strokeWidth={1.75}
+                className="mt-0.5 shrink-0 text-faint"
+              />
+            </button>
+          </li>
         </ul>
+
+        {/* Reset before loading so the same file can be chosen twice running; see the picker's copy of
+            this, which explains what the second silent pick would otherwise look like. */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            event.target.value = ''
+            takeFile(file)
+          }}
+        />
 
         {error ? (
           <p role="alert" className="mt-1.5 flex items-start gap-1 text-label text-error">
             <TriangleAlert aria-hidden size={14} strokeWidth={1.75} className="mt-px shrink-0" />
             <span>
-              <span className="font-mono">{error.id}</span> did not load: {error.message}. Samples live in{' '}
-              <span className="font-mono">traces/public/recordings/</span>.
+              {/* Conditional period: `loadRecording` throws whole sentences, a `SyntaxError` and an HTTP
+                  status do not, and both are quoted verbatim. See the picker's copy. */}
+              <span className="font-mono">{error.id}</span> did not load: {error.message}
+              {error.message.endsWith('.') ? '' : '.'}{' '}
+              {/* A missing sample and a rejected file need opposite next steps, and pointing someone at
+                  this repository to find their own file is the wrong one. */}
+              {error.source === 'sample' ? (
+                <>
+                  Samples live in <span className="font-mono">traces/public/recordings/</span>.
+                </>
+              ) : (
+                <>
+                  Traces reads rrweb JSON: an event array, or the{' '}
+                  <span className="font-mono">{'{ events: … }'}</span> wrapper a downloaded recording
+                  has.
+                </>
+              )}
             </span>
           </p>
         ) : null}
