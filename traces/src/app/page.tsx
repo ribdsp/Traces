@@ -12,6 +12,7 @@ import { ReplayStage } from '@/components/player/replay-stage'
 import { Timeline } from '@/components/timeline/timeline'
 import { RecordingPicker } from '@/components/ui/recording-picker'
 import { ResizableSplit } from '@/components/ui/resizable-split'
+import { TOOL_STATUS_SLOT_ID } from '@/components/ui/tool-status-banner'
 
 /**
  * The whole app, on one screen.
@@ -119,22 +120,38 @@ export default function Home() {
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
-      <header className="relative flex shrink-0 items-start justify-between gap-3 border-b border-line px-3 py-1.5">
+      <header className="relative flex shrink-0 items-center justify-between gap-3 border-b border-line bg-panel px-3 py-2">
         <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="shrink-0 text-xs font-medium tracking-tight text-ink">Traces</h1>
+          {/*
+            The wordmark is the one place in this app allowed to be a size larger than its neighbours.
+            It is not decoration: a screen recording that opens on a grey instrument with no name on it
+            is a recording nobody can attribute afterwards.
+          */}
+          <h1 className="shrink-0 text-title font-semibold tracking-tight text-ink">Traces</h1>
+          <span aria-hidden className="hidden h-3 w-px shrink-0 self-center bg-line-strong md:block" />
           {/*
             Short enough to sit at 900px without truncating, and hidden below `md` rather than clipped.
             The sentence that used to be here — the one that explained what interrogating a replay means —
             moved to `StageEmptyState`, where it has room and where it is actually wanted. `truncate` stays
             as a guard so a future edit to this string cannot push the picker off the right edge.
           */}
-          <p className="hidden truncate text-[11px] text-muted md:block">
+          <p className="hidden truncate text-meta text-muted md:block">
             agent-interrogable session replay
           </p>
         </div>
 
-        <ShortcutLegend />
-        <RecordingPicker />
+        <div className="flex min-w-0 items-center gap-2">
+          {/*
+            Where the WebMCP status pill lands. `ToolStatusBanner` owns the element's name and portals
+            into it, because registration is held by `ToolSurface` in the root layout — a sibling of this
+            page rather than a parent. `display: contents` so the wrapper generates no box: an empty slot
+            must not leave a gap in the header before the first render, and once filled the pill should be
+            a flex item of this row rather than a child of a spacer.
+          */}
+          <div id={TOOL_STATUS_SLOT_ID} className="contents" />
+          <RecordingPicker />
+          <ShortcutLegend />
+        </div>
       </header>
 
       <ResizableSplit
@@ -181,7 +198,7 @@ function ShortcutLegend() {
     <>
       <ul
         title={LEGEND_TITLE}
-        className="hidden shrink-0 items-center gap-2 pt-0.5 text-[10px] text-faint lg:flex"
+        className="hidden shrink-0 items-center gap-2 text-label text-faint lg:flex"
       >
         {LEGEND.map((item) => (
           <li key={item.keys} className="flex items-center gap-1">
@@ -194,14 +211,14 @@ function ShortcutLegend() {
       <details className="relative shrink-0 lg:hidden">
         <summary
           title={LEGEND_TITLE}
-          className="flex cursor-pointer list-none items-center gap-1 border border-line px-1 py-0.5 text-[10px] text-muted marker:content-none hover:border-faint hover:text-ink focus-visible:border-ink focus-visible:text-ink focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+          className="flex cursor-pointer list-none items-center gap-1 rounded-sm border border-line-strong bg-raised px-1.5 py-0.5 text-label text-muted shadow-raised marker:content-none hover:border-faint hover:text-ink [&::-webkit-details-marker]:hidden"
         >
           {/*
             Names the control rather than decorating a heading: collapsed, this is one word in a crowded
             header, and the glyph is what makes it findable at a glance. The word beside it is still the
             accessible name, so the icon stays hidden from assistive tech.
           */}
-          <Keyboard aria-hidden size={12} strokeWidth={1.5} />
+          <Keyboard aria-hidden size={13} strokeWidth={1.75} />
           keys
         </summary>
 
@@ -209,7 +226,7 @@ function ShortcutLegend() {
           `raised` rather than a heavier border to lift the popover off the header. Drop shadows are out,
           so elevation here is carried by the surface token that exists for it.
         */}
-        <ul className="absolute right-0 top-[calc(100%+3px)] z-20 w-max space-y-1 border border-line bg-raised px-2 py-1.5 text-[10px] text-muted">
+        <ul className="absolute right-0 top-[calc(100%+4px)] z-20 w-max space-y-1 rounded-md border border-line-strong bg-raised px-2 py-1.5 text-label text-muted shadow-raised">
           {LEGEND.map((item) => (
             <li key={item.keys} className="flex items-center gap-1.5">
               <LegendKey keys={item.keys} />
@@ -222,6 +239,12 @@ function ShortcutLegend() {
   )
 }
 
+/** 10px is the documented floor for a key cap and nothing else: `esc` set at 13px is wider than the
+ *  word it labels, and the legend is five of them in a header that has to survive 720px. */
 function LegendKey({ keys }: { keys: string }) {
-  return <kbd className="border border-line px-1 font-mono text-[9px] text-muted">{keys}</kbd>
+  return (
+    <kbd className="rounded-sm border border-line-strong bg-base px-1 font-mono text-micro text-muted">
+      {keys}
+    </kbd>
+  )
 }
