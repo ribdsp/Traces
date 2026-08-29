@@ -16,16 +16,20 @@ import { anchorFor, percentOf } from './axis'
  * one.
  *
  * Animate in trace order with a short stagger (~80ms). Rendering all ten probes at once shows the
- * result but not the search, which is the part worth showing.
+ * result but not the search, which is the part worth showing. Ten probes is about 3.5ms of real work.
  *
  * What shipped, and why:
  *   - one dot per probe, in three treatments: filled bright for true, filled dim for false, and a hollow
  *     ring for `elementMissing`. That last one is a different claim — "there was nothing to ask about"
  *     rather than "the answer was no" — and merging the two is how a report ends up describing an element
  *     appearing as a state change.
- *   - the funnel: after each probe, the interval that survived, folded from the trace. Successive windows
- *     are narrower and fainter, and the one that survived every probe is drawn once more in the agent's
- *     own colour with its millisecond value. The store keeps only the trace, so the bracket is derived here.
+ *   - the funnel: after each probe, the interval that survived, folded from the trace. Drawn as a stack of
+ *     shaded bars, each narrower and fainter than the one above it, so the search reads top to bottom as a
+ *     wedge closing on an instant. The store keeps only the trace, so every bracket is derived here.
+ *   - the answer, marked three ways: the surviving window shaded in the agent's own colour, a 2px rule at
+ *     the instant itself, and a readout. The rule is there because the shading is not enough — a search that
+ *     converges to ±41ms of a 44s recording has a window about a third of a pixel wide, so the *successful*
+ *     case is exactly the one where a shaded window disappears.
  *   - the entrance is staggered in trace order, and skipped entirely under `prefers-reduced-motion`
  *   - the reveal restarts when the trace changes. `setBisectTrace` replaces the array wholesale for exactly
  *     this reason, so the effect keyed on the trace object is the intended signal.
@@ -35,17 +39,34 @@ import { anchorFor, percentOf } from './axis'
  * `agent`, not `human`, for the answer: a bisect is entirely the agent's work, and that token means exactly
  * that everywhere else in the app. The probes themselves stay monochrome so the one coloured thing in the
  * band is the conclusion.
+ *
+ * **The probes are not individually numbered on the axis, and that is geometric rather than a preference.**
+ * A binary search's consecutive probes are half as far apart as the pair before them, so on a 720px strip
+ * the last four gaps are 2.8px, 1.4px, 0.7px and less: probes 7 to 10 share a pixel column, and four
+ * two-digit ordinals cannot be drawn 1px apart at any type size. Numbering the ones that happen to fit would
+ * silently stop somewhere in the middle of the sequence and read as though the search had six steps. So the
+ * ordinal is carried where it does fit and stays exact: every probe's `title` and `aria-label` say "probe 4
+ * of 10", the readout states the total, the funnel's vertical order is the sequence, and the staggered
+ * entrance shows it happening. Position on the axis is the *time* axis here, and it is already spoken for.
  */
 
 /** One probe every 80ms. Fast enough to feel like a search, slow enough to count the steps. */
 const STAGGER_MS = 80
 
-/** The band, in pixels from its own top. 40px total, shared with nothing else — see Timeline's budget. */
+/**
+ * The band, in pixels from its own top. 40px total, shared with nothing else — see Timeline's budget.
+ *
+ * Four rows in 40px, and every boundary here is load-bearing: the funnel ends where the dots begin, the
+ * answer's shading is tall enough to be seen behind the dots without reaching the readout, and the readout
+ * gets the 11px it needs to be read at all.
+ */
 const ROWS_TOP_PX = 2
-const ROWS_HEIGHT_PX = 17
+const ROWS_HEIGHT_PX = 12
 const ROW_PITCH_MAX_PX = 3
-const DOTS_TOP_PX = 22
-const LABEL_TOP_PX = 30
+const DOTS_TOP_PX = 16
+const ANSWER_TOP_PX = 15
+const ANSWER_HEIGHT_PX = 12
+const LABEL_TOP_PX = 28
 
 /** The interval that has survived so far. Either bound is null until a probe has established it. */
 type SurvivingWindow = { from: number | null; to: number | null }
@@ -167,17 +188,31 @@ export function BisectTrace() {
           <span
             key={`window-${index}`}
             aria-hidden
-            className="absolute h-px bg-muted"
+            // 2px at a pitch of at most 3: the bars all but touch, so the stack reads as one wedge
+            // narrowing rather than as a set of unrelated rules. A 1px bar at this pitch read as a texture.
+            className="absolute h-[2px] rounded-[1px] bg-muted"
             style={{
               top: ROWS_TOP_PX + index * pitch,
               left: span.left,
               right: span.right,
               // Narrower and fainter as the search closes in, so the funnel reads top to bottom.
-              opacity: 0.75 - (index / Math.max(historyRows.length, 1)) * 0.45,
+              opacity: 0.85 - (index / Math.max(historyRows.length, 1)) * 0.5,
             }}
           />
         )
       })}
+
+      {/*
+        The answer, before the dots so that the deciding probe still paints over its own shading. Held back
+        until the last probe has been drawn, so the reveal ends on the conclusion instead of starting with it.
+      */}
+      {isComplete && converged ? (
+        <ConvergedAnswer
+          bracket={converged}
+          durationMs={recording.durationMs}
+          probeCount={trace.length}
+        />
+      ) : null}
 
       {steps.map((step, index) => {
         const missing = step.elementMissing === true
@@ -190,12 +225,18 @@ export function BisectTrace() {
             title={`probe ${index + 1} of ${trace.length} — ${formatSeconds(step.atMs)} (${step.atMs}ms) — ${outcome}`}
             aria-label={`Seek to probe ${index + 1} at ${formatSeconds(step.atMs)}, ${outcome}`}
             onClick={() => sessionActions().setCurrentTime(step.atMs, 'human')}
-            className="pointer-events-auto absolute flex h-2 w-[9px] -translate-x-1/2 items-center justify-center"
+            className="pointer-events-auto absolute flex h-3 w-[9px] -translate-x-1/2 items-center justify-center"
             style={{ top: DOTS_TOP_PX, left: percentOf(step.atMs, recording.durationMs) }}
           >
+            {/*
+              8px rather than 6, and ringed rather than bare. These are the ten things a viewer is meant to
+              count, and at 6px on a compressed recording the false ones were indistinguishable from the
+              funnel behind them. The ring is `bg-base`, the strip's own ground, so a probe that lands on a
+              shaded window still reads as a dot on top of it rather than as a hole in it.
+            */}
             <span
               aria-hidden
-              className={`h-1.5 w-1.5 rounded-full ${
+              className={`h-2 w-2 rounded-full ring-1 ring-base ${
                 missing
                   ? 'border border-muted bg-transparent'
                   : step.result
@@ -206,14 +247,6 @@ export function BisectTrace() {
           </button>
         )
       })}
-
-      {/*
-        The answer: the surviving bracket and the millisecond it converged on. Held back until the last
-        probe has been drawn, so the reveal ends on the conclusion instead of starting with it.
-      */}
-      {isComplete && converged ? (
-        <ConvergedAnswer bracket={converged} durationMs={recording.durationMs} />
-      ) : null}
     </div>
   )
 }
@@ -221,9 +254,11 @@ export function BisectTrace() {
 function ConvergedAnswer({
   bracket,
   durationMs,
+  probeCount,
 }: {
   bracket: SurvivingWindow
   durationMs: number
+  probeCount: number
 }) {
   /**
    * Three outcomes, and the wording of each matters more than the drawing does. A search that never saw
@@ -234,10 +269,10 @@ function ConvergedAnswer({
     return (
       <span
         title="Every probe evaluated false, so the predicate never held inside the probed range. The transition is outside it, or the predicate is wrong."
-        className="absolute right-0 font-mono text-[9px] leading-none text-muted"
+        className="absolute right-0 whitespace-nowrap font-mono text-label leading-none text-muted"
         style={{ top: LABEL_TOP_PX }}
       >
-        no transition in the probed range
+        no transition in {probeCount} probes
       </span>
     )
   }
@@ -247,17 +282,33 @@ function ConvergedAnswer({
 
   return (
     <>
+      {/*
+        The window that survived every probe, shaded. Only when a probe established the lower bound: with
+        `from` null the predicate was already true at the first probe, and shading from the left edge of the
+        panel would draw a bound the search never found.
+      */}
       {bracket.from !== null ? (
         <span
           aria-hidden
-          className="absolute h-1 bg-agent/70"
+          className="absolute rounded-sm bg-agent/25"
           style={{
-            top: DOTS_TOP_PX + 8,
+            top: ANSWER_TOP_PX,
+            height: ANSWER_HEIGHT_PX,
             left: percentOf(bracket.from, durationMs),
             right: percentOf(durationMs - at, durationMs),
           }}
         />
       ) : null}
+
+      {/*
+        The instant itself. Two pixels, opaque, and the only thing in this band that does not shrink as the
+        search gets *better* — which is the whole point of drawing it separately from the window.
+      */}
+      <span
+        aria-hidden
+        className="absolute w-[2px] -translate-x-1/2 rounded-sm bg-agent"
+        style={{ top: ANSWER_TOP_PX, height: ANSWER_HEIGHT_PX, left: percentOf(at, durationMs) }}
+      />
 
       <span
         title={
@@ -265,13 +316,15 @@ function ConvergedAnswer({
             ? `The predicate already held at the first probe (${at}ms), so this is the earliest time probed rather than the moment it changed.`
             : `The predicate was false at ${bracket.from}ms and true at ${at}ms: the change happened in the ${precisionMs}ms between them.`
         }
-        className={`absolute whitespace-nowrap font-mono text-[9px] leading-none ${anchorFor(at, durationMs)}`}
+        className={`absolute whitespace-nowrap font-mono text-label leading-none ${anchorFor(at, durationMs)}`}
         style={{ top: LABEL_TOP_PX, left: percentOf(at, durationMs) }}
       >
-        <span className="text-agent">{formatSeconds(at)}</span>
-        <span className="ml-1 text-muted">
+        {/* Value, precision, sample count — in that order, which is how any instrument states a reading. */}
+        <span className="font-medium tabular-nums text-agent">{formatSeconds(at)}</span>
+        <span className="ml-1 tabular-nums text-muted">
           {precisionMs === null ? 'already true — floor, not a change' : `±${precisionMs}ms`}
         </span>
+        <span className="ml-1 text-faint">· {probeCount} probes</span>
       </span>
     </>
   )

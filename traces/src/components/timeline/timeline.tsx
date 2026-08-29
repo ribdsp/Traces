@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { formatSeconds } from '@/components/ui/format-time'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 import { AnnotationMarker } from './annotation-marker'
-import { anchorFor, percentOf } from './axis'
+import { anchorFor, percentOf, TIMELINE_HEIGHT_PX } from './axis'
 import { BisectTrace } from './bisect-trace'
 import { EventTrack } from './event-track'
 
@@ -26,13 +26,24 @@ import { EventTrack } from './event-track'
  *   - every layer above the button is `pointer-events-none`, with `pointer-events-auto` restored on the
  *     things that are actually clickable. Without that, a decorative band spanning the full width
  *     swallows clicks meant for the axis, and the symptom looks like a broken `onClick`.
- *   - tick labels through `formatSeconds`, spaced so the axis never crowds
+ *   - a two-weight ruler: labelled ticks through `formatSeconds`, and four unlabelled ticks between each
+ *     pair. The minor ticks are what make the axis a *measure* rather than a row of numbers — they are how
+ *     an eye interpolates "just after 14s" from a marker sitting between two labels, which is the reading
+ *     this whole panel exists to support.
  *   - a hover guide with the time under the cursor, because checking an agent's claimed timestamp
  *     against the axis is the single most common act in this app and it should not cost a click
+ *   - the playhead is a 1px rule with a handle in the ruler, above every band. It used to be a bare hairline
+ *     among other hairlines: in a compressed recording it was indistinguishable from a tick, and where the
+ *     playhead *is* is the one thing a viewer tracks continuously.
  *
- * The vertical budget is 96px and every band has a fixed home, so two layers never land on each other:
- * ruler at the top, markers at 24px (`AnnotationMarker` owns that offset), the bisect funnel between
- * them and the event track, and the event track along the bottom.
+ * The vertical budget is `TIMELINE_HEIGHT_PX` and every band has a fixed home, so two layers never land on
+ * each other: ruler in the top 17px, markers at 20px (`MARKER_TOP_PX`, which `AnnotationMarker` reads), the
+ * bisect funnel from 40px to 80px, and the event track in the bottom 24px.
+ *
+ * That budget went from 96px to 112px in the visual pass, which is 16px taken from the replay panel above.
+ * Spent on the two bands a viewer actually reads at video resolution — the ruler's labels and the event
+ * track's lozenges — and affordable because this strip is a `shrink-0` flex sibling of the split, so the
+ * cost is 16px of replay height rather than a scrollbar. Checked at every width in the brief.
  */
 
 /**
@@ -55,6 +66,15 @@ function tickIntervalFor(durationMs: number): number {
   return COARSEST_TICK_MS
 }
 
+/**
+ * Unlabelled ticks between each labelled one.
+ *
+ * Five, so that at the usual 5s interval each minor tick is one second — the unit anyone reading this axis
+ * is counting in. It also bounds the DOM: `MAX_TICK_LABELS` majors means at most 70 minor ticks, whatever
+ * the recording's length.
+ */
+const MINOR_TICKS_PER_LABEL = 5
+
 /** Below this, a pointer move is not a new reading — it is the same instant, one pixel over. */
 const HOVER_RESOLUTION_MS = 50
 
@@ -65,14 +85,17 @@ export function Timeline() {
   const [hoverAtMs, setHoverAtMs] = useState<number | null>(null)
 
   /**
-   * The empty state is a sentence rather than a blank bar. A 96px grey strip under the player reads as
-   * a timeline that failed to draw, and the one thing worth saying here is what this axis is *for* —
+   * The empty state is a sentence rather than a blank bar. A grey strip under the player reads as a
+   * timeline that failed to draw, and the one thing worth saying here is what this axis is *for* —
    * it is the collaboration claim, and it is legible before any data arrives.
    */
   if (!recording) {
     return (
-      <div className="flex h-24 shrink-0 items-center justify-center border-t border-line px-6">
-        <p className="text-center text-[11px] text-muted">
+      <div
+        className="flex shrink-0 items-center justify-center border-t border-line px-6"
+        style={{ height: TIMELINE_HEIGHT_PX }}
+      >
+        <p className="text-center text-meta text-muted">
           The shared timeline appears here once a recording is loaded.
           <span className="mt-0.5 block text-faint">
             Everything you mark and everything the agent finds lands on this one axis, labelled by who
@@ -89,6 +112,13 @@ export function Timeline() {
   const interval = tickIntervalFor(recording.durationMs)
   const ticks: number[] = []
   for (let at = 0; at <= recording.durationMs; at += interval) ticks.push(at)
+
+  /** Every subdivision that is not already a labelled tick. Built from the same interval, so they cannot drift. */
+  const minorInterval = interval / MINOR_TICKS_PER_LABEL
+  const minorTicks: number[] = []
+  for (let at = minorInterval; at <= recording.durationMs; at += minorInterval) {
+    if (Math.abs(at % interval) > 1) minorTicks.push(at)
+  }
 
   /** Recording-relative time under the cursor, from a clientX. Shared by the hover and the click. */
   const timeAt = (clientX: number, bounds: DOMRect): number => {
@@ -109,7 +139,8 @@ export function Timeline() {
      * stay `visible` — `hidden` on one axis computes the other to `auto` and hands the timeline a scrollbar.
      */
     <div
-      className="relative h-24 shrink-0 select-none overflow-x-clip border-t border-line bg-base"
+      className="relative shrink-0 select-none overflow-x-clip border-t border-line bg-base"
+      style={{ height: TIMELINE_HEIGHT_PX }}
       onMouseMove={(event) => {
         const at = timeAt(event.clientX, event.currentTarget.getBoundingClientRect())
         // Guarded rather than throttled: a pointer emits these faster than the axis can say anything
@@ -131,12 +162,30 @@ export function Timeline() {
         }}
       />
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-3">
+      {/*
+        The ruler. Both weights hang from the strip's own top border, which is the line they are ticks of —
+        drawing a second rule under them would be a border on a border.
+      */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[17px]">
+        {minorTicks.map((at) => (
+          <span
+            key={`minor-${at}`}
+            aria-hidden
+            className="absolute top-0 h-[3px] w-px bg-line"
+            style={{ left: positionOf(at) }}
+          />
+        ))}
+
         {ticks.map((at) => (
           <span key={at} className="absolute top-0" style={{ left: positionOf(at) }}>
-            <span aria-hidden className="absolute top-0 h-1.5 w-px bg-line" />
+            <span aria-hidden className="absolute top-0 h-1.5 w-px bg-line-strong" />
+            {/*
+              10px, the one size below the type floor, and deliberate: these are the axis's own units rather
+              than something to read a sentence of, and every extra pixel here is a pixel of label crowding
+              the next tick. `muted` instead of `faint` is what makes them legible after video compression.
+            */}
             <span
-              className={`absolute top-1.5 font-mono text-[9px] leading-none text-faint ${anchorOf(at)}`}
+              className={`absolute top-[7px] font-mono text-micro leading-none text-muted ${anchorOf(at)}`}
             >
               {formatSeconds(at)}
             </span>
@@ -155,23 +204,35 @@ export function Timeline() {
       {/* The reading, and a guide so the eye can carry it down to the event track and back. */}
       {hoverAtMs !== null ? (
         <div
-          className="pointer-events-none absolute top-0 h-full"
+          className="pointer-events-none absolute top-0 z-10 h-full"
           style={{ left: positionOf(hoverAtMs) }}
         >
           <span aria-hidden className="absolute top-0 h-full w-px bg-faint/70" />
+          {/*
+            Opaque and raised, because it lands on top of the tick labels it is a more precise version of.
+            Transparent, it read as two numbers overlapping.
+          */}
           <span
-            className={`absolute top-0 bg-panel px-1 font-mono text-[10px] leading-tight text-ink ${anchorOf(hoverAtMs)}`}
+            className={`absolute top-0 rounded-sm border border-line-strong bg-raised px-1 font-mono text-label leading-tight text-ink shadow-raised ${anchorOf(hoverAtMs)}`}
           >
             {formatSeconds(hoverAtMs)}
           </span>
         </div>
       ) : null}
 
+      {/*
+        The playhead, above every band. `z-20` rather than DOM order alone: `AnnotationMarker` claims `z-10`
+        for its hover label, and a marker sitting under the playhead would otherwise paint over it.
+      */}
       <div
-        className="pointer-events-none absolute top-0 h-full w-px bg-ink"
+        className="pointer-events-none absolute top-0 z-20 h-full"
         style={{ left: positionOf(currentTime) }}
         aria-hidden
-      />
+      >
+        <span className="absolute top-0 h-full w-px bg-ink" />
+        {/* The handle. A grab-looking tab in the ruler is what tells a viewer the line is the thing moving. */}
+        <span className="absolute top-0 h-2 w-2.5 -translate-x-1/2 rounded-b-sm bg-ink" />
+      </div>
     </div>
   )
 }

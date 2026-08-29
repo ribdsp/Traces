@@ -1,15 +1,25 @@
 /**
  * Turning a recording time into a position on the axis.
  *
- * Three components draw onto the same 96px strip — the axis itself, the event track and the bisect trace —
- * and every one of them needs the same two answers: where does this millisecond sit, and which way should
- * its label hang so it stays inside the panel. Keeping both here is what makes a tick, a marker and a probe
- * at the same instant land on the same pixel, which is the whole basis for a human checking an agent's
- * claimed timestamp against the picture.
+ * Four components draw onto the same strip — the axis itself, the markers, the event track and the bisect
+ * trace — and every one of them needs the same two answers: where does this millisecond sit, and which way
+ * should its label hang so it stays inside the panel. Keeping both here is what makes a tick, a marker and
+ * a probe at the same instant land on the same pixel, which is the whole basis for a human checking an
+ * agent's claimed timestamp against the picture.
  *
  * Percentages, never pixels: the panel is resizable and the demo gets recorded at a width nobody develops
- * at.
+ * at. The two exceptions are below, and they are vertical.
  */
+
+/**
+ * The strip's own height, and where the marker band sits inside it.
+ *
+ * Pixels, and shared, because `AnnotationMarker` draws a guide line the full height of a strip it is a
+ * child of — so the two files have to agree on that number or the guide stops short of the event track it
+ * exists to point at. A Tailwind class in each file would be two literals nothing checks.
+ */
+export const TIMELINE_HEIGHT_PX = 112
+export const MARKER_TOP_PX = 20
 
 /** Left offset for a recording time, as a CSS percentage. */
 export function percentOf(atMs: number, durationMs: number): string {
