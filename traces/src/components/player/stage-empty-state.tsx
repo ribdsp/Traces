@@ -32,18 +32,18 @@ export function StageEmptyState() {
   const { load, loadingId, error } = useSampleLoader()
 
   return (
-    <div className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-[11px] leading-relaxed">
-      <h2 className="text-xs font-medium tracking-tight text-ink">
+    <div className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-meta leading-relaxed">
+      <h2 className="text-title font-semibold tracking-tight text-ink">
         Session replay an AI agent can interrogate
       </h2>
-      <p className="mt-0.5 text-muted">
+      <p className="mt-1 text-muted">
         It reads the DOM at any moment, binary-searches the timeline for where the page went wrong, and
         asks you to look when it cannot see.
       </p>
 
       <section className="mt-3 border-l border-line pl-2.5">
         <h3 className="flex items-center gap-1.5 font-medium text-ink">
-          <Layers aria-hidden size={12} strokeWidth={1.5} className="shrink-0 text-muted" />
+          <Layers aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           This panel is a DOM, not a video
         </h3>
         <p className="mt-0.5 text-muted">
@@ -56,11 +56,11 @@ export function StageEmptyState() {
 
       <section className="mt-3">
         <h3 className="flex items-center gap-1.5 font-medium text-ink">
-          <CirclePlay aria-hidden size={12} strokeWidth={1.5} className="shrink-0 text-muted" />
+          <CirclePlay aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Load a recording
         </h3>
 
-        <ul className="mt-1 space-y-1">
+        <ul className="mt-1.5 space-y-1">
           {SAMPLE_RECORDINGS.map((sample) => (
             <li key={sample.id}>
               {/*
@@ -71,11 +71,23 @@ export function StageEmptyState() {
                 type="button"
                 onClick={() => load(sample)}
                 disabled={loadingId !== null}
-                className="flex w-full flex-col items-start gap-y-0.5 border border-line px-2 py-1 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink focus-visible:outline-none disabled:opacity-50 sm:flex-row sm:items-baseline sm:gap-x-2"
+                className="flex w-full flex-col items-start gap-y-0.5 rounded-sm border border-line-strong px-2 py-1 text-left transition hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50 sm:flex-row sm:items-baseline sm:gap-x-2"
               >
-                <span className="shrink-0 font-mono text-ink">{sample.id}</span>
-                <span className="text-[10px] leading-snug text-muted">
-                  {sample.id === loadingId ? 'loading…' : sample.blurb}
+                <span className="shrink-0 font-mono font-medium text-ink">{sample.id}</span>
+                <span className="text-label leading-snug text-muted">
+                  {sample.id === loadingId ? (
+                    /*
+                      The same dot the header's picker shows, for the same reason: this is the one wait in
+                      the app the human did not choose to sit through. It settles solid under reduced
+                      motion, and "loading…" is what carries the state in either case.
+                    */
+                    <span className="inline-flex items-center gap-1.5">
+                      <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+                      loading…
+                    </span>
+                  ) : (
+                    sample.blurb
+                  )}
                 </span>
               </button>
             </li>
@@ -83,8 +95,8 @@ export function StageEmptyState() {
         </ul>
 
         {error ? (
-          <p role="alert" className="mt-1 flex items-start gap-1 text-[10px] text-error">
-            <TriangleAlert aria-hidden size={12} strokeWidth={1.5} className="mt-px shrink-0" />
+          <p role="alert" className="mt-1.5 flex items-start gap-1 text-label text-error">
+            <TriangleAlert aria-hidden size={14} strokeWidth={1.75} className="mt-px shrink-0" />
             <span>
               <span className="font-mono">{error.id}</span> did not load: {error.message}. Samples live in{' '}
               <span className="font-mono">traces/public/recordings/</span>.
@@ -95,10 +107,10 @@ export function StageEmptyState() {
 
       <section className="mt-3">
         <h3 className="flex items-center gap-1.5 font-medium text-ink">
-          <Plug aria-hidden size={12} strokeWidth={1.5} className="shrink-0 text-muted" />
+          <Plug aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Getting WebMCP
         </h3>
-        <ul className="mt-0.5 space-y-0.5 text-muted">
+        <ul className="mt-1 space-y-0.5 text-muted">
           <li>
             <span className="text-ink">ChatGPT desktop</span>, in its in-app browser — works as it
             comes.
@@ -108,7 +120,7 @@ export function StageEmptyState() {
             <code className="text-ink">chrome://flags/#enable-webmcp-testing</code>, then reload.
           </li>
         </ul>
-        <p className="mt-0.5 text-faint">
+        <p className="mt-1 text-faint">
           The bar at the top of the window says which of those you are on, and whether the sixteen tools
           registered. Everything below works without WebMCP; only the agent needs it.
         </p>

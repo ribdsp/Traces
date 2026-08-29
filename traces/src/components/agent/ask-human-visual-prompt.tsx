@@ -32,6 +32,9 @@ import { useSessionStore } from '@/lib/store/session'
  *     consumed by the tool, and `SessionState` has nowhere to keep either — so the question is held here
  *     while it is open and paired with the store's own outcome line once it closes. Erasing it would erase
  *     the most distinctive thing in the app at the moment it finally happened.
+ *   - a pulsing dot beside the elapsed count, and it is one of only four animated things in the app. This
+ *     is the single moment where a *person* is the blocking dependency of a running program, and a still
+ *     card does not read as held open. See the note at the dot for how it degrades.
  */
 
 /** The store's wording for the two outcomes, from `answerAsk` and `clearAsk`. */
@@ -101,7 +104,15 @@ export function AskHumanVisualPrompt() {
           glyph on the player, so the two halves of this one interaction are recognisable as each other.
         */}
         <SectionHeading rank="alert" label="Agent needs your eyes" icon={Eye}>
-          <span className="ml-auto shrink-0 font-mono text-label tabular-nums text-muted">
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono text-label tabular-nums text-muted">
+            {/*
+              `animate-pulse` rather than a spinner, for the reason `webmcp-badge.tsx` uses two chevrons:
+              `globals.css` zeroes animation duration under `prefers-reduced-motion`, which lands opacity on
+              1 and leaves a solid amber dot. A rotating glyph would stop dead and read as a hang. Nothing
+              here depends on the motion either way — the word "waiting" and a count that climbs every
+              second already say it, and the dot is the part that catches an eye that was elsewhere.
+            */}
+            <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-warn" />
             waiting {Math.round(waitedMs / 1000)}s
           </span>
         </SectionHeading>

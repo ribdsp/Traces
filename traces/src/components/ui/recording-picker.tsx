@@ -172,7 +172,16 @@ export function RecordingPicker() {
           {loadingId ?? openId ?? 'none loaded'}
         </span>
         {loading ? (
-          <span className="shrink-0 text-label text-muted">loading…</span>
+          /*
+            The one place a person waits on us rather than the other way round, so it gets the same dot
+            vocabulary as the gate in `ask-human-visual-prompt.tsx` — `muted` instead of `warn`, because
+            here the machine is the one working. The word stays: under `prefers-reduced-motion` the dot
+            settles solid and "loading…" is what still says what is happening.
+          */
+          <span className="flex shrink-0 items-center gap-1.5 text-label text-muted">
+            <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+            loading…
+          </span>
         ) : /* Two glyphs rather than one rotated: reduced motion zeroes the transform and would leave
               the open state signalled by nothing. Same reasoning as `webmcp-badge.tsx`. */
         open ? (

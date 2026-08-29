@@ -140,11 +140,24 @@
   color-scheme: light;
 }
 
+/*
+ * Reduced motion, and `animation-iteration-count` is the load-bearing line rather than the duration.
+ *
+ * Zeroing the duration alone does not stop an `infinite` animation — it runs the same keyframes a hundred
+ * thousand times a second, which is not "no motion", it is the same motion with the frames dropped. Every
+ * animated thing in this app is an `animate-pulse` dot standing in for a live state (a gate held open, a
+ * task being worked, a recording loading), so capping the count at one is what makes each of them settle on
+ * its own last keyframe — `opacity: 1`, a solid dot — instead of sampling a cycle nobody asked to see.
+ *
+ * That is the contract those components document and rely on: the dot may stop moving, but it must not
+ * disappear, because in each case it is the thing saying something is still happening.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

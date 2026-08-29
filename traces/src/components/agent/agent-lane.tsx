@@ -160,8 +160,10 @@ function TaskRow({ task, now }: { task: Task; now: number | null }) {
       </span>
 
       {/*
-        The working indication. `animate-pulse` rather than a spinner because globals.css zeroes animation
-        duration under prefers-reduced-motion, which turns this into a static dot instead of removing it.
+        The working indication. `animate-pulse` rather than a spinner because reduced motion caps this at one
+        iteration (see globals.css), which settles it on `opacity: 1` — a static dot rather than nothing. A
+        rotating glyph frozen at 0deg would say "idle" instead, and the row's amber rail and `claimed` chip
+        are what carry the state when the motion is gone.
       */}
       {task.status === 'claimed' ? (
         <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-warn" />
