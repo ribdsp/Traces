@@ -31,6 +31,10 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  *     readable error instead of leaving the agent to poll a ticket nothing will answer
  *   - 1..4 pick a choice, for driving this at demo speed. Escape is deliberately *not* skip: a dismissal
  *     fails the agent's call, which is too much to hang on a stray keypress.
+ *   - the card is the most raised thing on the screen while it is up — a radius, an inset highlight and an
+ *     amber border — because it is a dialog over a live document rather than a panel beside one. The dot
+ *     next to the heading is the same signal `AskHumanVisualPrompt` shows in the agent column: one gate,
+ *     two surfaces, one vocabulary.
  */
 export function MarkPointOverlay() {
   const pendingAsk = useSessionStore((s) => s.pendingAsk)
@@ -78,27 +82,36 @@ export function MarkPointOverlay() {
      * a dialog and submits a value is how someone answers a question they were only trying to read.
      */
     <div className="absolute inset-0 flex flex-col items-center justify-end bg-base/75 p-3">
-      <div className="w-full max-w-lg border border-warn/40 bg-panel/95 p-3">
+      <div className="w-full max-w-lg rounded-md border border-warn/50 bg-panel/95 p-3 shadow-raised">
         {/* The same glyph `AskHumanVisualPrompt` puts on its heading: one question, two surfaces, one mark. */}
-        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-warn">
-          <Eye aria-hidden size={12} strokeWidth={1.5} className="shrink-0" />
+        <p className="flex items-center gap-1.5 text-meta uppercase tracking-wide text-warn">
+          <Eye aria-hidden size={15} strokeWidth={1.75} className="shrink-0" />
           The agent is waiting for you
+          {/*
+            Degrades to a solid dot: `globals.css` zeroes animation duration under `prefers-reduced-motion`,
+            which settles `animate-pulse` on opacity 1. The sentence it sits beside is what actually carries
+            the meaning, so nothing is lost when the motion is.
+          */}
+          <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-warn" />
         </p>
 
-        <p className="mt-1 text-xs leading-relaxed text-ink">{pendingAsk.question}</p>
+        <p className="mt-1.5 text-body leading-relaxed text-ink">{pendingAsk.question}</p>
 
         {/*
           The timestamp is the part of this answer the agent can act on, so it is the one number in the card
-          that is set in mono type and updates as the playhead moves.
+          that is set in mono type and updates as the playhead moves. `tabular-nums` because it does update:
+          proportional digits make a live counter jitter sideways.
         */}
-        <p className="mt-2 flex items-baseline gap-1.5 text-[10px] text-muted">
+        <p className="mt-2 flex flex-wrap items-baseline gap-x-1.5 text-meta text-muted">
           <span>marking</span>
-          <span className="font-mono text-[11px] text-human">{formatSeconds(currentTime)}</span>
+          <span className="font-mono text-body tabular-nums text-human">
+            {formatSeconds(currentTime)}
+          </span>
           <span>— click the timeline to mark a different moment</span>
         </p>
 
         {hintAtMs !== undefined ? (
-          <p className="mt-1 text-[10px] text-muted">
+          <p className="mt-1 text-meta text-muted">
             The agent suggested {formatSeconds(hintAtMs)}
             {isAtHint ? (
               ', where the playhead is now.'
@@ -108,7 +121,7 @@ export function MarkPointOverlay() {
                 <button
                   type="button"
                   onClick={() => sessionActions().setCurrentTime(hintAtMs, 'human')}
-                  className="underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
+                  className="rounded-sm underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink"
                 >
                   Go back there
                 </button>
@@ -117,15 +130,16 @@ export function MarkPointOverlay() {
           </p>
         ) : null}
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
           {pendingAsk.choices.map((choice, index) => (
             <button
               key={choice}
               type="button"
               onClick={() => answer(choice)}
-              className="flex items-baseline gap-1 border border-line bg-raised px-2 py-1 text-xs text-ink hover:border-warn/60 focus-visible:border-warn focus-visible:outline-none"
+              className="flex items-baseline gap-1.5 rounded-sm border border-line-strong bg-raised px-2 py-1 text-body text-ink shadow-raised hover:border-warn/60 focus-visible:border-warn"
             >
-              <span className="font-mono text-[9px] text-faint">{index + 1}</span>
+              {/* 10px is below the type floor and allowed to be: it is a key cap, not text to read. */}
+              <span className="font-mono text-micro text-faint">{index + 1}</span>
               {choice}
             </button>
           ))}
@@ -138,7 +152,7 @@ export function MarkPointOverlay() {
             type="button"
             onClick={() => sessionActions().clearAsk()}
             title="Close the question without answering. The agent is told you skipped it."
-            className="ml-auto px-1 text-[10px] uppercase tracking-wide text-muted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
+            className="ml-auto rounded-sm px-1 text-label uppercase tracking-wide text-muted hover:text-ink focus-visible:bg-raised focus-visible:text-ink"
           >
             skip
           </button>

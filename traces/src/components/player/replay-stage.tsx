@@ -129,7 +129,14 @@ export function ReplayStage() {
       )}
 
       {recording && viewport ? (
-        <p className="absolute bottom-1 right-2 font-mono text-[10px] text-faint">
+        /*
+          10px, and allowed to be: an instrument readout in the corner of the frame, not text to read.
+          `muted` rather than `faint`, though — measured at 3.09:1 against `bg-base`, which is below the
+          4.5:1 this size needs, and this is the one readout that sits alone on the frame a recording
+          spends its whole runtime pointed at. `muted` is 6.07:1. Same size, same swap, same reason as the
+          ruler's tick labels in `timeline.tsx`, which is the precedent rather than a new judgement.
+        */
+        <p className="absolute bottom-1 right-2 font-mono text-micro tabular-nums text-muted">
           {viewport.width}×{viewport.height} · {Math.round(scale * 100)}%
         </p>
       ) : null}
@@ -151,10 +158,10 @@ function StageErrorState({ message }: { message: string }) {
   return (
     <div
       role="alert"
-      className="absolute inset-x-3 bottom-3 border border-error/50 bg-error/10 px-3 py-2 text-[11px] text-ink"
+      className="absolute inset-x-3 bottom-3 rounded-md border border-error/50 bg-error/10 px-3 py-2 text-meta text-ink shadow-raised"
     >
       <p className="flex items-center gap-1.5 font-medium text-error">
-        <TriangleAlert aria-hidden size={13} strokeWidth={1.5} className="shrink-0" />
+        <TriangleAlert aria-hidden size={14} strokeWidth={1.75} className="shrink-0" />
         The replay engine did not start.
       </p>
       <p className="mt-0.5 font-mono text-ink">{message}</p>

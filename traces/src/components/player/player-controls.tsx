@@ -34,6 +34,22 @@ import { sessionActions, useSessionStore } from '@/lib/store/session'
  *   - a marker when the agent moved the playhead last, derived by `useLastSeekAuthor` rather than from a
  *     store field, and gone again as soon as the human moves it
  *   - space toggles, arrows step 100ms, shift-arrow 1s — ignored while focus is in something typable
+ *
+ * Two notes on the appearance, since both look like decoration and are not:
+ *
+ * The scrubber is drawn as three stacked pieces — a track, a fill, and a native `input[type=range]` on
+ * top with its own track suppressed — rather than left as a default slider. A default range input in a
+ * dark UI is a 4px line with a 4px handle, which is unaimable with a mouse and invisible in a
+ * compressed screen recording. The input keeps the full 20px row as its hit area while the visible
+ * track stays 4px, and the fill behind the handle is the one cue that says *how far through this
+ * recording we are* without reading the clock. The handle's own vendor pseudo-elements live in
+ * `globals.css`, because `::-webkit-slider-thumb` cannot be reached from a utility class without a
+ * dozen arbitrary variants that nobody will read twice.
+ *
+ * The speeds are one segmented control rather than three separate buttons. Three equal bordered
+ * rectangles state that there are three options and stay silent about which one is on; a single
+ * enclosure with one raised segment answers "what speed is this playing at" from across a room, which
+ * is the question the control exists for.
  */
 
 /** So Day 6's shortcut can put focus on the scrubber without threading a ref through the layout. */
@@ -70,6 +86,9 @@ export function PlayerControls() {
 
   const durationMs = recording?.durationMs ?? 0
   const disabled = recording === null
+
+  /** The fill behind the handle. Clamped, because `currentTime` is not the scrubber's to bound. */
+  const progress = durationMs === 0 ? 0 : Math.min(100, Math.max(0, (currentTime / durationMs) * 100))
 
   /**
    * Space and the arrows, bound at the window.
@@ -110,72 +129,103 @@ export function PlayerControls() {
       the alternative was hiding the duration, and a player that stops saying how long the recording is
       has lost something a viewer actually reads.
     */
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-3 py-2 text-xs text-muted">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line bg-panel px-3 py-2 text-body text-muted">
       <button
         type="button"
         onClick={playback.toggle}
         disabled={disabled}
         title={playback.isPlaying ? 'Pause (space)' : 'Play (space)'}
         aria-label={playback.isPlaying ? 'Pause' : 'Play'}
-        className="flex h-5 w-8 shrink-0 items-center justify-center border border-line text-ink hover:border-faint focus-visible:border-ink focus-visible:outline-none disabled:border-panel disabled:text-faint"
+        className="flex h-6 w-9 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-raised text-ink shadow-raised hover:border-faint disabled:border-line disabled:bg-panel disabled:text-faint"
       >
-        {/* The glyph is the whole control, so `aria-label` above is its only name — do not drop it. */}
+        {/* The glyph is the whole control, so `aria-label` above is its only name — do not drop it.
+            Filled rather than outlined: a transport button is the one place in this UI that should read
+            as a solid target, and a 14px hairline triangle does not survive being video. */}
         {playback.isPlaying ? (
-          <Pause aria-hidden size={14} strokeWidth={1.5} />
+          <Pause aria-hidden size={13} strokeWidth={1} className="fill-current" />
         ) : (
-          <Play aria-hidden size={14} strokeWidth={1.5} />
+          <Play aria-hidden size={13} strokeWidth={1} className="fill-current" />
         )}
       </button>
 
       <span className="shrink-0 font-mono tabular-nums text-ink">
         {(currentTime / 1000).toFixed(3)}s
       </span>
-      <span className="shrink-0 text-faint">/ {(durationMs / 1000).toFixed(3)}s</span>
+      <span className="shrink-0 font-mono text-meta tabular-nums text-faint">
+        / {(durationMs / 1000).toFixed(3)}s
+      </span>
 
       {/*
-        `step` matches the arrow-key step so a scrubber that has focus behaves like the global shortcut
-        rather than like a 1ms slider nobody can aim.
+        Three layers, one control. The track and fill are painted here; the handle is
+        `.traces-scrubber` in globals.css. `min-w` keeps it from collapsing to nothing when the row wraps
+        at 720px, where it is the widest thing on the second line.
       */}
-      <input
-        id={SCRUBBER_ID}
-        type="range"
-        min={0}
-        max={durationMs === 0 ? 1 : durationMs}
-        step={STEP_MS}
-        value={currentTime}
-        disabled={disabled}
-        aria-label="Playhead"
-        aria-valuetext={`${(currentTime / 1000).toFixed(3)} seconds`}
-        onChange={(event) => {
-          // A drag is the human taking over, so it stops the ticker rather than fighting it.
-          playback.pause()
-          sessionActions().setCurrentTime(Number(event.target.value), 'human')
-        }}
-        /*
-          `accent-ink` rather than the `human` token: both parties move this playhead — the agent's seeks
-          write to the same store — so the control itself must not claim an author. The `moved by AGENT`
-          badge at the end of the row is what says who did, and it is the only thing here that may.
-        */
-        className="h-1 min-w-[6rem] flex-1 cursor-pointer accent-ink disabled:cursor-default disabled:accent-line"
-      />
+      <div className="relative flex h-5 min-w-[8rem] flex-1 items-center">
+        <div aria-hidden className="absolute inset-x-0 h-1 rounded-full bg-line" />
+        <div
+          aria-hidden
+          className={`absolute left-0 h-1 rounded-full ${disabled ? 'bg-line-strong' : 'bg-ink'}`}
+          style={{ width: `${progress}%` }}
+        />
+        {/*
+          `step` matches the arrow-key step so a scrubber that has focus behaves like the global shortcut
+          rather than like a 1ms slider nobody can aim.
+        */}
+        <input
+          id={SCRUBBER_ID}
+          type="range"
+          min={0}
+          max={durationMs === 0 ? 1 : durationMs}
+          step={STEP_MS}
+          value={currentTime}
+          disabled={disabled}
+          aria-label="Playhead"
+          aria-valuetext={`${(currentTime / 1000).toFixed(3)} seconds`}
+          onChange={(event) => {
+            // A drag is the human taking over, so it stops the ticker rather than fighting it.
+            playback.pause()
+            sessionActions().setCurrentTime(Number(event.target.value), 'human')
+          }}
+          /*
+            Neutral, not `human`: both parties move this playhead — the agent's seeks write to the same
+            store — so the control itself must not claim an author. The `moved by AGENT` badge at the end
+            of the row is what says who did, and it is the only thing here that may.
+          */
+          className="traces-scrubber relative h-5 w-full cursor-pointer disabled:cursor-default"
+        />
+      </div>
 
-      <div className="flex shrink-0 gap-1">
-        {PLAYBACK_SPEEDS.map((speed) => (
-          <button
-            key={speed}
-            type="button"
-            onClick={() => playback.setSpeed(speed)}
-            disabled={disabled}
-            aria-pressed={playback.speed === speed}
-            className={`border px-1 py-0.5 font-mono text-[10px] focus-visible:border-ink focus-visible:outline-none disabled:border-panel disabled:text-faint ${
-              playback.speed === speed
-                ? 'border-faint text-ink'
-                : 'border-line text-muted hover:text-ink'
-            }`}
-          >
-            {speed}×
-          </button>
-        ))}
+      {/*
+        One enclosure, three segments. `aria-pressed` per segment rather than a radiogroup: these are
+        toggles onto a live player, not a form value that gets submitted, and `pressed` is what a screen
+        reader should read back for "2× is on".
+      */}
+      <div
+        role="group"
+        aria-label="Playback speed"
+        className="flex shrink-0 divide-x divide-line overflow-hidden rounded-sm border border-line-strong bg-panel"
+      >
+        {PLAYBACK_SPEEDS.map((speed) => {
+          const active = playback.speed === speed
+
+          return (
+            <button
+              key={speed}
+              type="button"
+              onClick={() => playback.setSpeed(speed)}
+              disabled={disabled}
+              aria-pressed={active}
+              title={`Play at ${speed}× speed`}
+              className={`px-1.5 py-0.5 font-mono text-label tabular-nums disabled:text-faint ${
+                active
+                  ? 'bg-raised text-ink shadow-raised'
+                  : 'text-muted hover:bg-raised/60 hover:text-ink'
+              }`}
+            >
+              {speed}×
+            </button>
+          )
+        })}
       </div>
 
       {/*
@@ -183,7 +233,7 @@ export function PlayerControls() {
         it explains something already on screen rather than announcing it — and it disappears the moment
         the human moves the playhead themselves.
       */}
-      <span className="w-28 shrink-0 text-right text-[10px] text-faint">
+      <span className="flex w-28 shrink-0 items-center justify-end gap-1 text-label text-faint">
         {lastSeekAuthor === 'agent' ? (
           <>
             moved by

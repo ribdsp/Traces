@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronUp, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { TIMELINE_HEIGHT_PX } from '@/components/timeline/axis'
 import { allTools } from '@/lib/webmcp/register-tools'
 import { onToolChange } from '@/lib/webmcp/tool-change'
 import type { RegistrationResult } from '@/lib/webmcp/register-tools'
@@ -20,22 +21,26 @@ import type { RegistrationResult } from '@/lib/webmcp/register-tools'
  *
  * Three things here are load-bearing rather than stylistic:
  *
- *   - **Degraded states render no collapse control at all.** Not "collapsed by default", not "reopens on
- *     change" — while the surface is amber or red the panel is open and there is no button to close it.
- *     A chip that can hide `polyfill` or `unavailable` behind a neutral-looking dot is the exact bug the
- *     banner exists to prevent, and adding a second, dismissible place for that state to live would
- *     reintroduce it one component over. Green and idle collapse freely.
+ *   - **The red state renders no collapse control at all.** Not "collapsed by default", not "reopens on
+ *     change" — while the surface is unavailable the panel is open and there is no button to close it. What
+ *     makes that safe to relax for amber, and why it is not relaxed here, is worked out at `expanded`
+ *     below; the short version is that an error panel cannot grow tall enough to cover anything, because
+ *     the tool grid it would have grown by is exactly what an error state does not have.
  *   - **The tool list comes from the host, not from us.** `document.modelContext.getTools()` reports what
  *     the browser actually holds, so a tool the host rejected cannot appear here. Reading our own
  *     `allTools` array instead would render sixteen confident cards on a page where zero are callable.
- *   - **The chevron is two icons, not one rotated one.** `globals.css` zeroes animation duration under
- *     `prefers-reduced-motion`, so a transform-based caret would stop moving and leave the open state
- *     signalled by nothing.
+ *   - **The chevron is two icons, not one rotated one.** Under `prefers-reduced-motion` `globals.css`
+ *     collapses transitions to nothing, so a transform-based caret would sit at one angle in both states
+ *     and leave open-vs-closed signalled by nothing. Swapping the glyph is state, not animation, and
+ *     survives. Every other reduced-motion fallback in the app cites this file, so: the rule is that the
+ *     signal has to exist in the static frame.
  *
- * Docked to the right edge above the timeline rather than floating in the corner. The timeline owns the
- * bottom 96px of the viewport (`timeline.tsx` states that budget explicitly, and this offset tracks it),
- * and the last few percent of that axis is the end of the recording — markers a judge is meant to click.
- * Covering it to advertise the tool surface would be the panel damaging the thing it describes.
+ * Docked to the right edge above the timeline rather than floating in the corner, because the last few
+ * percent of that axis is the end of the recording — markers a judge is meant to click. Covering them to
+ * advertise the tool surface would be the panel damaging the thing it describes. The offset is
+ * `TIMELINE_HEIGHT_PX` itself rather than a matching Tailwind step: it was `bottom-24` against a 96px
+ * timeline, the timeline became 112px, and a literal that has to be remembered is a literal that goes
+ * stale silently — the badge simply started overlapping the ruler it was written to clear.
  */
 
 const DEFINITION =
@@ -160,11 +165,27 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
   const health = healthOf(registration)
 
   /*
-   * Amber and red are not collapsible. See the note at the top of the file: this is the constraint that
-   * keeps a second, dismissible copy of the surface's health from undoing the banner.
+   * Red is not collapsible. Amber no longer is either way — it opens on arrival like any other state and can
+   * be closed — and the distinction is mechanical rather than a softening of the rule above.
+   *
+   * The rule is that a degraded surface must not be hideable. What discharges it is `ToolStatusBanner`:
+   * full-width, in flow, no close control, naming the mode in words at the top of the page. This panel was
+   * additionally forced open as a second guarantee, and at 720px that guarantee costs the entire agent
+   * column — measured: the panel is 288px of tool grid starting 112px off the bottom, which lands squarely
+   * on the task-queue textarea, the control `page.tsx` focuses on `a`. Occluding a focusable input with
+   * something that has no close button is the bug this file's own note says must never happen, and in the
+   * `polyfill` state, which is what Chrome shows without the flag, it happens every time.
+   *
+   * `error` is exempt because the panel is short there *by construction*: the tool grid is gated on
+   * `tools.length > 0` and an error state has none, so what is forced open is a definition, a sentence and
+   * four prompts — roughly 180px, which clears the input at the height a recording is made at. The state
+   * that can grow to cover something is the state that is no longer pinned open.
+   *
+   * The chip keeps the amber triangle and the screen-reader word in both cases, so collapsing changes how
+   * much is said, never whether the page admits it.
    */
   const degraded = health === 'warn' || health === 'error'
-  const expanded = degraded || open
+  const expanded = health === 'error' || open
 
   /*
    * The host's list when we have one, ours when we do not — and ours is filtered to what actually
@@ -182,57 +203,73 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
       {degraded ? (
         <TriangleAlert
           aria-hidden
-          size={12}
-          strokeWidth={1.5}
+          size={14}
+          strokeWidth={1.75}
           className={`shrink-0 ${health === 'error' ? 'text-error' : 'text-warn'}`}
         />
       ) : (
-        <span aria-hidden className={`h-1.5 w-1.5 shrink-0 ${DOT[health]}`} />
+        <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[health]}`} />
       )}
-      <span className="font-mono text-[10px] tracking-wide text-ink">WebMCP</span>
+      <span className="font-mono text-label tracking-wide text-ink">WebMCP</span>
       <span className="sr-only">— {STATE_WORD[health]}</span>
     </>
   )
 
+  /*
+   * The chip is flush to the right edge, so only its left corners are visible, and the top-left one is only
+   * an outside corner while the panel above it is closed. Rounding it unconditionally would notch the seam
+   * between the two.
+   */
+  const chipRadius = expanded ? 'rounded-bl-md' : 'rounded-bl-md rounded-tl-md'
+
   return (
-    <div className="fixed bottom-24 right-0 z-20 flex flex-col items-stretch">
+    <div
+      /* See the docstring: tracks the timeline's own height rather than restating it as a class. */
+      style={{ bottom: TIMELINE_HEIGHT_PX }}
+      className="fixed right-0 z-20 flex flex-col items-stretch"
+    >
       {expanded ? (
         /*
           The height cap is a functional limit, not a taste one. This panel is forced open in every degraded
           state, and a taller one reaches up past the agent lane's input — a control `page.tsx` focuses by
-          keyboard shortcut, which must never be covered by something with no close button. 18rem stops
-          short of it at 720px, the recording height, and the overflow scrolls.
+          keyboard shortcut, which must never be covered by something with no close button. 18rem plus the
+          112px the timeline takes puts its top edge 400px off the bottom, which clears the input at the
+          720px recording height, and the overflow scrolls.
         */
         <div
           id="webmcp-panel"
-          className="max-h-72 w-80 max-w-[calc(100vw-1rem)] overflow-y-auto border-l border-t border-line bg-panel p-3"
+          className="max-h-72 w-80 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-tl-md border-l border-t border-line-strong bg-panel p-3 shadow-raised"
         >
-          <p className="text-[11px] leading-relaxed text-ink">{DEFINITION}</p>
+          <p className="text-meta leading-relaxed text-ink">{DEFINITION}</p>
 
           <div className="mt-2.5 border-t border-line pt-2.5">
-            <h3 className="text-[9px] uppercase tracking-wide text-faint">Status</h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-ink">
+            <h3 className="text-micro uppercase tracking-wide text-faint">Status</h3>
+            <p className="mt-1 text-meta leading-relaxed text-ink">
               <StatusSentence health={health} count={tools.length} />
             </p>
-            <p className="mt-1 text-[10px] leading-relaxed text-muted">{REACH}</p>
+            <p className="mt-1 text-label leading-relaxed text-muted">{REACH}</p>
           </div>
 
           {tools.length > 0 ? (
             <div className="mt-2.5 border-t border-line pt-2.5">
-              <h3 className="text-[9px] uppercase tracking-wide text-faint">
+              <h3 className="text-micro uppercase tracking-wide text-faint">
                 Tools on this page ({tools.length})
               </h3>
               <ul className="mt-1.5 grid grid-cols-2 gap-1.5">
                 {tools.map((tool) => (
-                  <li key={tool.name} className="border border-line p-1.5" title={tool.full}>
-                    <p className="font-mono text-[10px] leading-none text-ink">{tool.name}</p>
+                  <li
+                    key={tool.name}
+                    className="rounded-sm border border-line bg-raised p-1.5"
+                    title={tool.full}
+                  >
+                    <p className="font-mono text-label leading-none text-ink">{tool.name}</p>
                     {/*
                       Two lines, hard. `firstSentence` is already the short form and it is still six lines
                       wide for `read_session_meta` in a 145px column, which turns sixteen cards into a wall
                       of prose nobody reads. The clamp is what makes this a scannable index; `title` on the
                       card keeps the sentence available to anyone who wants it.
                     */}
-                    <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-muted">
+                    <p className="mt-1 line-clamp-2 text-label leading-tight text-muted">
                       {tool.summary}
                     </p>
                   </li>
@@ -242,7 +279,7 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
           ) : null}
 
           <div className="mt-2.5 border-t border-line pt-2.5">
-            <h3 className="text-[9px] uppercase tracking-wide text-faint">Try asking</h3>
+            <h3 className="text-micro uppercase tracking-wide text-faint">Try asking</h3>
             {/*
               Quoted and left as prose rather than made copyable. A copy button here would need its own
               clipboard-failure path — `report-draft.tsx` has one because a report is the artefact worth
@@ -250,7 +287,7 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
             */}
             <ul className="mt-1 space-y-1">
               {EXAMPLES.map((example) => (
-                <li key={example} className="text-[10px] leading-relaxed text-muted">
+                <li key={example} className="text-label leading-relaxed text-muted">
                   “{example}”
                 </li>
               ))}
@@ -259,12 +296,14 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
         </div>
       ) : null}
 
-      {degraded ? (
+      {health === 'error' ? (
         /*
           No button, on purpose. The chip still names the surface so the badge does not vanish in the state
           it matters most, but there is nothing here to click, so there is nothing here that can hide it.
         */
-        <div className="flex items-center gap-1.5 border-l border-t border-line bg-panel px-2 py-1">
+        <div
+          className={`flex items-center gap-1.5 border-l border-t border-line-strong bg-panel px-2 py-1 ${chipRadius}`}
+        >
           {header}
         </div>
       ) : (
@@ -278,13 +317,13 @@ export function WebMcpBadge({ registration }: { registration: RegistrationResult
               ? 'Hide the WebMCP tool surface.'
               : 'What WebMCP is, which tools this page exposes, and what to ask an agent.'
           }
-          className="flex items-center gap-1.5 border-l border-t border-line bg-panel px-2 py-1 text-left hover:bg-raised focus-visible:bg-raised focus-visible:outline-none"
+          className={`flex items-center gap-1.5 border-l border-t border-line-strong bg-panel px-2 py-1 text-left hover:bg-raised focus-visible:bg-raised ${chipRadius}`}
         >
           {header}
           {expanded ? (
-            <ChevronDown aria-hidden size={12} strokeWidth={1.5} className="ml-auto text-muted" />
+            <ChevronDown aria-hidden size={13} strokeWidth={1.75} className="ml-auto text-muted" />
           ) : (
-            <ChevronUp aria-hidden size={12} strokeWidth={1.5} className="ml-auto text-muted" />
+            <ChevronUp aria-hidden size={13} strokeWidth={1.75} className="ml-auto text-muted" />
           )}
         </button>
       )}

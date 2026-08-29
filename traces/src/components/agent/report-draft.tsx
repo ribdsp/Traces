@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Copy, TriangleAlert } from 'lucide-react'
+import { Check, Copy, FileText, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
@@ -27,6 +27,14 @@ import type { Recording, Report } from '@/types/domain'
  *   - every field of `Report`, with each timestamp a seek
  *   - unverified steps say the word and explain it in a sentence, once, under the list. Colour alone would
  *     leave the distinction to whoever noticed the amber, and it is the most important distinction here.
+ *   - the steps and the evidence are real tables, with a header row that stays put while the column scrolls
+ *     and the times right-aligned in mono. That is not styling for its own sake: a reproduction is checked by
+ *     reading down the *times* rather than across the prose, and a column of `tabular-nums` is the only way
+ *     ten of them line up. The `check` column exists because the verified/unverified split is the report's
+ *     most important claim about itself, and a column is what makes an exception visible at a glance.
+ *   - every step now carries a chip either way — `ok` for verified, `warn` for unverified. An absent chip is
+ *     not a statement; a reader cannot tell "supported by a recorded event" from "nobody has looked". This is
+ *     the same rule as above, stated in the other direction.
  *   - copy as Markdown, which is what actually happens to a report — it gets pasted into a tracker
  *   - title and summary editable in place, and **held locally until approval**. That is not a stylistic
  *     choice: `propose_report` watches the store and treats *any* human-authored `setReport` as an approval
@@ -105,14 +113,16 @@ export function ReportDraft() {
 
   return (
     <section className="border-b border-line p-3">
-      <SectionHeading label="Report draft">
+      <SectionHeading label="Report draft" icon={FileText}>
         <AuthorBadge author={report.author} />
         {awaitingAgent ? (
-          <span className="ml-auto text-right text-[10px] text-warn/80">
+          <span className="ml-auto pl-2 text-right text-label leading-tight text-warn/90">
             waiting on your decision
           </span>
         ) : decision !== null ? (
-          <span className="ml-auto text-[10px] text-muted">{decision.kind}</span>
+          <span className="ml-auto text-label uppercase tracking-wide text-muted">
+            {decision.kind}
+          </span>
         ) : null}
       </SectionHeading>
 
@@ -124,7 +134,7 @@ export function ReportDraft() {
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         aria-label="Report title"
-        className="w-full border border-transparent bg-transparent text-xs font-medium text-ink hover:border-line focus:border-ink focus:outline-none"
+        className="w-full rounded-sm border border-transparent bg-transparent text-body font-medium text-ink hover:border-line focus:border-ink"
       />
 
       <textarea
@@ -133,11 +143,11 @@ export function ReportDraft() {
         rows={2}
         placeholder="No summary. Add one — it is the first thing whoever picks this up will read."
         aria-label="Report summary"
-        className="mt-1 w-full resize-none border border-transparent bg-transparent text-xs leading-relaxed text-muted placeholder:text-faint hover:border-line focus:border-ink focus:outline-none"
+        className="mt-1 w-full resize-none rounded-sm border border-transparent bg-transparent text-body leading-relaxed text-muted placeholder:text-faint hover:border-line focus:border-ink"
       />
 
       {edited ? (
-        <p className="flex items-baseline gap-1 text-[10px] text-muted">
+        <p className="flex items-baseline gap-1 text-meta text-muted">
           <span>Your wording, not the agent’s.</span>
           <button
             type="button"
@@ -145,7 +155,7 @@ export function ReportDraft() {
               setTitle(report.title)
               setSummary(report.summary)
             }}
-            className="underline decoration-dotted hover:text-ink focus-visible:bg-raised focus-visible:text-ink focus-visible:outline-none"
+            className="rounded-sm underline decoration-dotted hover:text-ink"
           >
             Restore the agent’s
           </button>
@@ -153,26 +163,56 @@ export function ReportDraft() {
       ) : null}
 
       <Field label="Steps to reproduce">
-        <ol className="space-y-1">
-          {report.steps.map((step, index) => (
-            <li key={`${index}-${step.text}`} className="flex items-baseline gap-1.5 text-xs">
-              <span className="shrink-0 font-mono text-[10px] text-faint">{index + 1}</span>
-              <span className={step.verified ? 'text-ink' : 'text-muted'}>{step.text}</span>
-
-              {step.atMs !== undefined ? <Timestamp atMs={step.atMs} /> : null}
-
-              {step.verified ? null : (
-                <span className="flex shrink-0 items-center gap-0.5 border border-warn/40 px-1 text-[9px] uppercase tracking-wide text-warn">
-                  <TriangleAlert aria-hidden size={12} strokeWidth={1.5} />
-                  unverified
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
+        {/*
+          `border-separate` rather than collapsed borders: a collapsed border on a sticky header is dropped
+          during scroll in Chromium, which is the one browser this is demonstrated in.
+        */}
+        <table className="w-full border-separate border-spacing-0 text-left">
+          <thead>
+            <tr>
+              <Th className="w-4 pl-1 text-right">#</Th>
+              <Th>step</Th>
+              <Th className="text-right">at</Th>
+              <Th className="text-right">check</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.steps.map((step, index) => (
+              /*
+                Striping rather than a rule under every row: at four columns and a dozen rows, hairlines add
+                up to a grid that competes with the text inside it. A quiet alternating ground does the same
+                job — following one row across — and disappears when you stop needing it.
+              */
+              <tr key={`${index}-${step.text}`} className="odd:bg-panel/40">
+                <td className="whitespace-nowrap py-1 pl-1 pr-1.5 align-baseline text-right font-mono text-label tabular-nums text-faint">
+                  {index + 1}
+                </td>
+                <td
+                  className={`py-1 pr-1.5 align-baseline text-body leading-snug ${
+                    step.verified ? 'text-ink' : 'text-muted'
+                  }`}
+                >
+                  {step.text}
+                </td>
+                <td className="whitespace-nowrap py-1 pr-1.5 align-baseline text-right">
+                  {step.atMs !== undefined ? (
+                    <Timestamp atMs={step.atMs} />
+                  ) : (
+                    <span aria-hidden className="font-mono text-label text-faint">
+                      —
+                    </span>
+                  )}
+                </td>
+                <td className="whitespace-nowrap py-1 pr-1 align-baseline text-right">
+                  <VerifiedChip verified={step.verified} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         {unverified > 0 ? (
-          <p className="mt-1.5 border-l border-warn/40 pl-2 text-[10px] leading-relaxed text-muted">
+          <p className="mt-1.5 border-l-2 border-warn/40 pl-2 text-meta leading-relaxed text-muted">
             {unverified === 1 ? 'One step is' : `${unverified} steps are`} marked unverified: no recorded
             event in this session matches {unverified === 1 ? 'it' : 'them'}, so the agent inferred{' '}
             {unverified === 1 ? 'it' : 'them'} rather than finding {unverified === 1 ? 'it' : 'them'}. Check{' '}
@@ -187,14 +227,26 @@ export function ReportDraft() {
 
       {report.evidence.length > 0 ? (
         <Field label="Evidence">
-          <ul className="space-y-0.5">
-            {report.evidence.map((item, index) => (
-              <li key={`${item.atMs}-${index}`} className="flex items-baseline gap-1.5 text-xs">
-                <Timestamp atMs={item.atMs} />
-                <span className="text-muted">{item.note}</span>
-              </li>
-            ))}
-          </ul>
+          <table className="w-full border-separate border-spacing-0 text-left">
+            <thead>
+              <tr>
+                <Th className="w-12 pl-1 text-right">at</Th>
+                <Th>note</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.evidence.map((item, index) => (
+                <tr key={`${item.atMs}-${index}`} className="odd:bg-panel/40">
+                  <td className="whitespace-nowrap py-1 pl-1 pr-1.5 align-baseline text-right">
+                    <Timestamp atMs={item.atMs} />
+                  </td>
+                  <td className="py-1 pr-1 align-baseline text-body leading-snug text-muted">
+                    {item.note}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Field>
       ) : null}
 
@@ -209,7 +261,7 @@ export function ReportDraft() {
                 : 'Send the report back approved. This is what the agent’s call is waiting on.'
               : 'No agent is waiting on this draft, but your edits are still recorded.'
           }
-          className="border border-human/50 bg-human/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-human hover:border-human focus-visible:border-ink focus-visible:outline-none"
+          className="rounded-sm border border-human/50 bg-human/10 px-2 py-0.5 text-label font-medium uppercase tracking-wide text-human hover:border-human"
         >
           {edited ? 'approve with edits' : 'approve'}
         </button>
@@ -222,7 +274,7 @@ export function ReportDraft() {
           type="button"
           onClick={() => commit(false)}
           title="Tell the agent the draft is not good enough. It is asked what to support better, not to resend it."
-          className="border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted hover:border-faint hover:text-ink focus-visible:border-ink focus-visible:outline-none"
+          className="rounded-sm border border-line-strong bg-raised px-2 py-0.5 text-label font-medium uppercase tracking-wide text-muted shadow-raised hover:border-faint hover:text-ink"
         >
           reject
         </button>
@@ -231,27 +283,27 @@ export function ReportDraft() {
           type="button"
           onClick={copy}
           title="Copy the report as Markdown, ready to paste into a tracker."
-          className="ml-auto flex items-center gap-1 border border-line px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted hover:border-faint hover:text-ink focus-visible:border-ink focus-visible:outline-none"
+          className="ml-auto flex items-center gap-1 rounded-sm border border-line-strong bg-raised px-2 py-0.5 text-label font-medium uppercase tracking-wide text-muted shadow-raised hover:border-faint hover:text-ink"
         >
           {/* The glyph is the state: `Check` only ever appears after a copy actually succeeded. */}
           {copied === 'ok' ? (
-            <Check aria-hidden size={12} strokeWidth={1.5} />
+            <Check aria-hidden size={12} strokeWidth={2} className="text-ok" />
           ) : (
-            <Copy aria-hidden size={12} strokeWidth={1.5} />
+            <Copy aria-hidden size={12} strokeWidth={1.75} />
           )}
           {copied === 'ok' ? 'copied' : 'copy as markdown'}
         </button>
       </div>
 
       {copied === 'failed' ? (
-        <p role="alert" className="mt-1 flex items-start gap-1 text-[10px] text-error">
-          <TriangleAlert aria-hidden size={12} strokeWidth={1.5} className="mt-px shrink-0" />
+        <p role="alert" className="mt-1 flex items-start gap-1 text-meta text-error">
+          <TriangleAlert aria-hidden size={13} strokeWidth={1.75} className="mt-px shrink-0" />
           The browser refused clipboard access. Select the report text and copy it by hand.
         </p>
       ) : null}
 
       {decision !== null && !awaitingAgent ? (
-        <p className="mt-1 text-[10px] leading-relaxed text-faint">
+        <p className="mt-1 text-meta leading-relaxed text-faint">
           {!decision.reached
             ? 'No agent was waiting on this draft, so there was nothing to answer. Anything you changed is still saved above.'
             : decision.kind === 'approved'
@@ -266,14 +318,56 @@ export function ReportDraft() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-2">
-      <h3 className="text-[9px] uppercase tracking-wide text-faint">{label}</h3>
+      <h3 className="text-label font-medium uppercase tracking-wide text-faint">{label}</h3>
       <div className="mt-0.5">{children}</div>
     </div>
   )
 }
 
+/**
+ * A column head that survives the column scrolling.
+ *
+ * `sticky top-0` against the agent panel's own scroll container — the `<aside>` in `resizable-split.tsx` —
+ * and `bg-base` because that is the ground it has to hide rows behind, set on `<body>`. A transparent sticky
+ * header shows the rows sliding through it, which looks like a rendering bug rather than a table.
+ */
+function Th({ className = '', children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <th
+      scope="col"
+      className={`sticky top-0 z-10 border-b border-line bg-base pb-0.5 text-label font-normal uppercase tracking-wide text-faint ${className}`}
+    >
+      {children}
+    </th>
+  )
+}
+
+/**
+ * Whether a recorded event supports this step.
+ *
+ * Both states get a chip. The absence of one is not a claim a reader can act on: it reads as "no opinion",
+ * which is exactly the impression this report is not allowed to give about a step the agent inferred. Severity
+ * colours rather than authorship ones, because this is a statement about the *evidence*, not about who wrote it.
+ */
+function VerifiedChip({ verified }: { verified: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-sm px-1 text-label font-medium uppercase tracking-wide ${
+        verified ? 'bg-ok/15 text-ok' : 'bg-warn/15 text-warn'
+      }`}
+    >
+      {verified ? (
+        <Check aria-hidden size={11} strokeWidth={2} />
+      ) : (
+        <TriangleAlert aria-hidden size={11} strokeWidth={2} />
+      )}
+      {verified ? 'verified' : 'unverified'}
+    </span>
+  )
+}
+
 function prose(text: string) {
-  return <p className="text-xs leading-relaxed text-ink">{text}</p>
+  return <p className="text-body leading-relaxed text-ink">{text}</p>
 }
 
 /** Every time in the report is a seek. Checking a claim has to cost one click, or nobody checks. */
@@ -288,7 +382,7 @@ function Timestamp({ atMs }: { atMs: number }) {
         action, so tinting one with `human` would spend an authorship colour on an affordance and leave it
         meaning nothing. The underline going solid is the hover, which survives a monochrome screen.
       */
-      className="shrink-0 font-mono text-[10px] text-ink underline decoration-dotted hover:decoration-solid focus-visible:bg-raised focus-visible:outline-none"
+      className="shrink-0 rounded-sm font-mono text-label tabular-nums text-ink underline decoration-dotted hover:decoration-solid"
     >
       {formatSeconds(atMs)}
     </button>

@@ -32,6 +32,9 @@ import { useSessionStore } from '@/lib/store/session'
  *     consumed by the tool, and `SessionState` has nowhere to keep either — so the question is held here
  *     while it is open and paired with the store's own outcome line once it closes. Erasing it would erase
  *     the most distinctive thing in the app at the moment it finally happened.
+ *   - a pulsing dot beside the elapsed count, and it is one of only four animated things in the app. This
+ *     is the single moment where a *person* is the blocking dependency of a running program, and a still
+ *     card does not read as held open. See the note at the dot for how it degrades.
  */
 
 /** The store's wording for the two outcomes, from `answerAsk` and `clearAsk`. */
@@ -96,24 +99,27 @@ export function AskHumanVisualPrompt() {
     return (
       <section className="border-b border-warn/30 bg-warn/5 p-3">
         {/*
-          The one glyph in the column, on the one section that can stop the agent. `Eye` rather than a warning
-          triangle: nothing is broken — the agent has hit a judgement a person has to make by looking, which is
-          also what the answer consists of. `MarkPointOverlay` carries the same glyph on the player, so the two
-          halves of this one interaction are recognisable as each other.
+          `Eye` rather than a warning triangle: nothing is broken — the agent has hit a judgement a person has
+          to make by looking, which is also what the answer consists of. `MarkPointOverlay` carries the same
+          glyph on the player, so the two halves of this one interaction are recognisable as each other.
         */}
-        <SectionHeading
-          rank="alert"
-          label="Agent needs your eyes"
-          icon={<Eye aria-hidden size={12} strokeWidth={1.5} className="shrink-0 self-center text-warn" />}
-        >
-          <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">
+        <SectionHeading rank="alert" label="Agent needs your eyes" icon={Eye}>
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono text-label tabular-nums text-muted">
+            {/*
+              `animate-pulse` rather than a spinner, for the reason `webmcp-badge.tsx` uses two chevrons:
+              `globals.css` zeroes animation duration under `prefers-reduced-motion`, which lands opacity on
+              1 and leaves a solid amber dot. A rotating glyph would stop dead and read as a hang. Nothing
+              here depends on the motion either way — the word "waiting" and a count that climbs every
+              second already say it, and the dot is the part that catches an eye that was elsewhere.
+            */}
+            <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-warn" />
             waiting {Math.round(waitedMs / 1000)}s
           </span>
         </SectionHeading>
 
-        <p className="text-xs leading-relaxed text-ink">{pendingAsk.question}</p>
+        <p className="text-body leading-relaxed text-ink">{pendingAsk.question}</p>
 
-        <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
+        <p className="mt-1.5 text-meta leading-relaxed text-muted">
           Answer on the player: put the playhead on the moment you mean, then pick one of the options over
           the replay.
           {pendingAsk.hintAtMs !== undefined
@@ -122,7 +128,7 @@ export function AskHumanVisualPrompt() {
         </p>
 
         {timedOut ? (
-          <p className="mt-1.5 border-l border-warn/40 pl-2 text-[10px] leading-relaxed text-warn/80">
+          <p className="mt-1.5 border-l-2 border-warn/40 pl-2 text-meta leading-relaxed text-warn/80">
             The agent’s call has already returned — it waited {Math.round(GATE_TIMEOUT_MS / 1000)}s and got a
             ticket back, so it is retrying rather than sitting still. Your answer still reaches it.
           </p>
@@ -142,21 +148,22 @@ export function AskHumanVisualPrompt() {
       <SectionHeading
         rank="record"
         label={resolved.answered ? 'You answered the agent' : 'You skipped the agent’s question'}
+        icon={Eye}
       />
 
-      <p className="text-[11px] leading-relaxed text-muted">{resolved.question}</p>
+      <p className="text-meta leading-relaxed text-muted">{resolved.question}</p>
 
-      <p className="mt-1 flex flex-wrap items-baseline gap-1 text-[11px] text-ink">
+      <p className="mt-1 flex flex-wrap items-baseline gap-1 text-body text-ink">
         <span>{resolved.outcome}</span>
         <AuthorBadge author="human" />
       </p>
 
       {resolved.answered ? (
-        <p className="mt-1 text-[10px] text-faint">
+        <p className="mt-1 text-meta text-faint">
           The moment you marked is now a marker on the timeline, and the agent has the timestamp.
         </p>
       ) : (
-        <p className="mt-1 text-[10px] text-faint">
+        <p className="mt-1 text-meta text-faint">
           The agent was told you skipped it, rather than being left waiting.
         </p>
       )}
