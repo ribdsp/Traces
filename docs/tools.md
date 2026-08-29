@@ -497,9 +497,11 @@ from hanging.** The contract, precisely:
 - Tickets live for the tab's lifetime. There is no server, so there is nothing to expire against; a
   reload retires every one of them.
 
-The timeout is `GATE_TIMEOUT_MS`, currently 25 s. That number is a guess chosen to be survivable, not
-a measurement — `blocking.ts` says so at the definition. Measure the real tolerance of the hosts you
-target and set it comfortably under whatever you measure.
+The timeout is `GATE_TIMEOUT_MS`, currently 8 s, and that number is a measurement. A 25 s gate lost a
+`propose_hypotheses` call outright: the ChatGPT in-app browser cut the agent's control connection at
+roughly 20 s, so the host gave up before the gate returned its ticket — the card rendered and the
+human's decision was recorded, but the agent received neither. Re-measure before targeting a host with
+a different tolerance, and keep the value comfortably under whatever you measure.
 
 ### 12. `ask_human_visual({ question, choices, hintAtMs?, ticket? })`
 

@@ -16,15 +16,22 @@ import type { Gate, GateResult } from '@/types/domain'
  * if they aren't. The agent then retries with the ticket, which reads to the model as a normal
  * polling loop rather than a broken page.
  *
- * Measure the real tolerance of the agents you target before trusting this number, and set
- * GATE_TIMEOUT_MS comfortably under whatever you measure.
+ * The ChatGPT in-app browser has since been measured at roughly 20 s before it severs the connection,
+ * which is what `GATE_TIMEOUT_MS` is set against. Re-measure before targeting a different host.
  */
 
 /**
- * TODO: Day 1 — replace with the measured value from S1, minus a healthy margin.
- * 25s is a guess chosen to be survivable rather than correct — it is not a measurement.
+ * Measured, not guessed. A 25 s gate lost a `propose_hypotheses` call outright: the ChatGPT in-app
+ * browser severed the agent's control connection at roughly 20 s, so the host gave up before the gate
+ * could hand back its ticket. The page had already rendered the card and the human's decision was
+ * still recorded — the agent just never received either, which is the one outcome the contract exists
+ * to prevent.
+ *
+ * 8 s sits far enough under that ceiling to survive a slower host, and costs nothing: a human who is
+ * already looking at the screen answers inside it, and one who isn't was always going to arrive by
+ * ticket. Raising this back up trades a guaranteed reply for a slightly shorter happy path.
  */
-export const GATE_TIMEOUT_MS = 25_000
+export const GATE_TIMEOUT_MS = 8_000
 
 /** One tool call currently awaiting this question. An agent that polls produces several over time. */
 type Waiter<T> = {

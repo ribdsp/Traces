@@ -15,7 +15,7 @@ import { snapshotFindingTool } from './snapshot-finding'
  * failure path come back as a sentence rather than a hang.
  *
  * Every blocking case here settles through the store — a human answering — rather than by waiting out
- * GATE_TIMEOUT_MS, which is 25 seconds and would make this suite unusable. The timeout path itself is
+ * GATE_TIMEOUT_MS, which would add its full duration to every test. The timeout path itself is
  * already pinned in blocking.test.ts; what these tests add is that the *store* half is connected to it,
  * because a gate nobody can answer and a gate nobody is watching look identical from the agent's side.
  */
