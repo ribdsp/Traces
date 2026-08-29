@@ -19,19 +19,29 @@ import { sessionActions } from '@/lib/store/session'
  * feedback has to be local or it would report on a component that no longer exists.
  */
 
-/** Which sample failed, and why. `id` so the message can name the file rather than "the recording". */
-export type SampleLoadError = { id: string; message: string }
+/**
+ * Which recording failed, and why. `id` so the message can name the file rather than "the recording".
+ *
+ * Shared with `useFileLoader`, which reports the same two facts about a file a person chose, and lives
+ * here rather than in a third module because this is where the shape and its consumers already were.
+ *
+ * `source` exists for one reason: the remedial hint. Both components used to end a failure with *"Samples
+ * live in `traces/public/recordings/`"*, which is the correct next step for a missing sample and actively
+ * wrong advice for a file the person picked off their own disk — it sends them to look in our repo for
+ * their file. A failure has to be able to say which of the two it was, and colour cannot say it.
+ */
+export type RecordingLoadError = { id: string; message: string; source: 'sample' | 'file' }
 
 export type SampleLoader = {
   load: (sample: SampleRecording) => Promise<void>
   /** The sample currently in flight, or null. Callers disable every button while this is set. */
   loadingId: string | null
-  error: SampleLoadError | null
+  error: RecordingLoadError | null
 }
 
 export function useSampleLoader(): SampleLoader {
   const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [error, setError] = useState<SampleLoadError | null>(null)
+  const [error, setError] = useState<RecordingLoadError | null>(null)
 
   const load = useCallback(async (sample: SampleRecording) => {
     const url = sampleRecordingUrl(sample.id)
@@ -56,7 +66,11 @@ export function useSampleLoader(): SampleLoader {
 
       sessionActions().loadRecording(recording, checkpoints)
     } catch (cause) {
-      setError({ id: sample.id, message: cause instanceof Error ? cause.message : String(cause) })
+      setError({
+        id: sample.id,
+        message: cause instanceof Error ? cause.message : String(cause),
+        source: 'sample',
+      })
     } finally {
       setLoadingId(null)
     }
