@@ -307,8 +307,54 @@ reproduce the bug, and download the recording:
 | `localhost:3001/checkout?bug=race` | the dropdown renders before its data arrives and never re-renders |
 | `localhost:3001/checkout?bug=overlay` | the pay button is present and enabled but covered, so clicks never land |
 
-Drop the downloaded JSON into Traces. **Keep recordings of real users out of version control** — see
-[T5](docs/threat-model.md#t5--a-real-user-session-ending-up-in-a-public-repository).
+The download lands as `<bug>.session.json`. To open it, use **Load a file…** — the last row of the
+recording menu in the header, and a matching row under the three samples on the empty stage. You can
+also drop the file anywhere on the empty stage. Nothing is uploaded, because there is nowhere to upload
+to: the file is read in the tab and parsed into memory. The name becomes the recording's label, and a
+slug of it becomes its id.
+
+**Keep recordings of real users out of version control** — see
+[T5](docs/threat-model.md#t5--a-real-user-session-ending-up-in-a-public-repository). Loading a file
+never writes to `traces/public/recordings/`, so a recording you open stays out of the repository unless
+you put it there yourself.
+
+### Recording your own app
+
+`npm i rrweb` and calling `record()` produces a file Traces will load and then serve badly. Five
+options do the actual work, and `bugbait/src/lib/record.ts` is the reference implementation:
+
+| Add this | What silently breaks without it |
+|---|---|
+| `checkoutEveryNms: 5000` | rrweb emits **one** full snapshot, at the start. The checkpoint index has a single entry, so every seek replays from the beginning — and `bisect`, which seeks repeatedly by design, pays that cost on each step. Nothing errors; the player just crawls |
+| `maskAllInputs: true` | every keystroke is recorded verbatim. See below — this one is not a preference |
+| a `window.fetch` patch emitting `addCustomEvent('network-request', …)` | `read_network` returns nothing. rrweb records DOM mutations, not requests; the network panel of a recording is whatever you put there yourself |
+| normalising console events to `{ type: 3, source: 11 }` | the console plugin emits `{ type: 6, data: { plugin: 'rrweb/console@1' } }`, which nothing downstream reads. `consoleErrors` stays `0` on a session full of errors — the most misleading of the five, because zero looks like an answer |
+| stamping `userAgent` onto the first Meta event | the session summary cannot say what browser it was |
+
+**`maskAllInputs: true` is mandatory, not a preference.** rrweb records input values by default, so a
+recorder without it is a credential logger: the password, the card number and the one-time code are all
+in the JSON, in plain text, for anyone the file is later shared with. Traces truncates a `value` to 20
+characters when a tool reads one, which limits what an agent sees and does nothing about what the file
+contains. Mask at the recorder or accept that the recording is a secret.
+
+**A gap worth knowing before you trust `read_network`:** a `fetch` patch sees `fetch` only.
+`XMLHttpRequest` traffic — anything on axios's default adapter, jQuery, or an older SDK — is invisible
+to it, and a recording of such an app will show an empty network timeline rather than an error. Every
+fixture here uses `fetch`, so none of them expose this.
+
+**The cost, measured** from the three files in `traces/public/recordings/`: 184–213 KiB for ~45 seconds
+of a small checkout page, or roughly 4–5 KiB per second, at 209–223 events. A recording is JSON and
+compresses well in transit; in memory it is the whole array. A ten-minute session of a heavier app is
+plausibly tens of megabytes, which is what the 64 MB ceiling on a loaded file is sized for.
+
+### Opening a recording you didn't make
+
+Worth stating, since the feature above invites it. Scripts inside a recording **cannot execute**: the
+replay iframe is sandboxed with `allow-same-origin` and not `allow-scripts`, so a `<script>` in the
+captured DOM is inert markup. Sub-resources are a different matter — images, stylesheets and fonts
+referenced by the recorded page **are fetched from their original URLs** when the DOM is rebuilt, which
+tells those origins that the recording was replayed and when. The JSON itself is parsed in the tab and
+goes nowhere; there is no upload endpoint to send it to.
 
 ---
 
