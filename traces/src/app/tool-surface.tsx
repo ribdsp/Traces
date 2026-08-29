@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { registerTools, unregisterTools, type RegistrationResult } from '@/lib/webmcp/register-tools'
 import { ToolStatusBanner } from '@/components/ui/tool-status-banner'
-import { WebMcpBadge } from '@/components/ui/webmcp-badge'
 
 /**
  * Registers every tool exactly once, and reports whether it worked.
@@ -20,10 +19,9 @@ import { WebMcpBadge } from '@/components/ui/webmcp-badge'
  * `unavailable` and the banner says so, because the alternative is a page that looks perfect and does
  * nothing — a bug that is invisible until someone else opens it.
  *
- * Both consumers of `registration` live here, and they are not redundant. `ToolStatusBanner` is in flow
- * and always visible: it is the health signal, and it is what the paragraph above is about.
- * `WebMcpBadge` is a docked overlay that explains what WebMCP is and lists what this page exposes — the
- * thing a judge opens once. Neither can be folded into the other without one of the two jobs losing.
+ * `ToolStatusBanner` is the only consumer of `registration` in the tree. The header pill is the health
+ * signal; opening it reveals the catalogue. A second docked chip used to say the same count again, and
+ * that was the one that got ignored.
  */
 export function ToolSurface() {
   const [registration, setRegistration] = useState<RegistrationResult | null>(null)
@@ -56,10 +54,5 @@ export function ToolSurface() {
     }
   }, [])
 
-  return (
-    <>
-      <ToolStatusBanner registration={registration} />
-      <WebMcpBadge registration={registration} />
-    </>
-  )
+  return <ToolStatusBanner registration={registration} />
 }
