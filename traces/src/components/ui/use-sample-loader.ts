@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { sampleRecordingUrl, type SampleRecording } from '@/components/ui/sample-recordings'
 import { buildCheckpointIndex } from '@/lib/replay/checkpoint-index'
 import { loadRecordingFile } from '@/lib/replay/load-recording-file'
+import { reportError } from '@/components/ui/error-toast'
 import { sessionActions } from '@/lib/store/session'
 
 /**
@@ -66,11 +67,9 @@ export function useSampleLoader(): SampleLoader {
 
       sessionActions().loadRecording(recording, checkpoints)
     } catch (cause) {
-      setError({
-        id: sample.id,
-        message: cause instanceof Error ? cause.message : String(cause),
-        source: 'sample',
-      })
+      const message = cause instanceof Error ? cause.message : String(cause)
+      setError({ id: sample.id, message, source: 'sample' })
+      reportError(`${sample.id} did not load`, message)
     } finally {
       setLoadingId(null)
     }

@@ -5,6 +5,7 @@ import { deriveRecordingName } from '@/components/ui/recording-name'
 import type { RecordingLoadError } from '@/components/ui/use-sample-loader'
 import { buildCheckpointIndex } from '@/lib/replay/checkpoint-index'
 import { loadRecordingFile } from '@/lib/replay/load-recording-file'
+import { reportError } from '@/components/ui/error-toast'
 import { sessionActions } from '@/lib/store/session'
 
 /**
@@ -93,6 +94,12 @@ export function useFileLoader(): FileLoader {
     setError(null)
 
     try {
+      const looksLikeJson =
+        file.name.toLowerCase().endsWith('.json') || file.type === 'application/json'
+      if (!looksLikeJson) {
+        throw new Error('Traces reads rrweb JSON. This file is not JSON.')
+      }
+
       /* Checked before `text()`, not after: the point is to not read the bytes at all. */
       if (file.size > MAX_RECORDING_BYTES) {
         throw new Error(
@@ -121,11 +128,9 @@ export function useFileLoader(): FileLoader {
     } catch (cause) {
       // `file.name` rather than the derived id: this names the file that failed, and a person who has to
       // go and look at it on disk needs the name they will actually see in a folder.
-      setError({
-        id: file.name,
-        message: cause instanceof Error ? cause.message : String(cause),
-        source: 'file',
-      })
+      const message = cause instanceof Error ? cause.message : String(cause)
+      setError({ id: file.name, message, source: 'file' })
+      reportError(`${file.name} did not load`, message)
     } finally {
       setLoadingName(null)
     }

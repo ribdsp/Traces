@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, ChevronDown, ChevronUp, FolderOpen, TriangleAlert } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, CirclePlay, Film, FolderOpen } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { SAMPLE_RECORDINGS, type SampleRecording } from '@/components/ui/sample-recordings'
 import { formatSeconds } from '@/components/ui/format-time'
@@ -89,23 +89,12 @@ const LAST_ROW = ROWS.length - 1
 
 export function RecordingPicker() {
   const recording = useSessionStore((s) => s.recording)
-  const { load: loadSample, loadingId, error: sampleError } = useSampleLoader()
-  const { load: loadFile, loadingName, error: fileError } = useFileLoader()
+  const { load: loadSample, loadingId } = useSampleLoader()
+  const { load: loadFile, loadingName } = useFileLoader()
 
   const [open, setOpen] = useState(false)
   /** Which row the arrows are on. Separate from the selection: moving is not choosing. */
   const [activeIndex, setActiveIndex] = useState(0)
-  /**
-   * Which of the two loaders was asked last, so the alert shows that one's failure and not the other's.
-   *
-   * Each hook clears its own error when it starts, which is all a hook can do and not enough for a
-   * component holding two of them: a file that failed, followed by a sample that loaded fine, would
-   * otherwise leave the file's alert on screen beside a recording that is open and working. An alert
-   * that outlives its failure is worse than no alert, because the next thing the reader distrusts is the
-   * recording.
-   */
-  const [lastAttempt, setLastAttempt] = useState<'sample' | 'file' | null>(null)
-
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -141,7 +130,6 @@ export function RecordingPicker() {
       return
     }
 
-    setLastAttempt('sample')
     void loadSample(row.sample)
   }
 
@@ -214,8 +202,6 @@ export function RecordingPicker() {
 
   const activeKey = ROWS[activeIndex]?.key
   const loading = loadingId !== null || loadingName !== null
-  /* `lastAttempt` is null only before either loader has run, when `sampleError` is null as well. */
-  const error = lastAttempt === 'file' ? fileError : sampleError
 
   return (
     <div ref={wrapRef} className="relative flex min-w-0 shrink flex-col items-end">
@@ -235,13 +221,13 @@ export function RecordingPicker() {
             show()
           }
         }}
-        className="flex min-w-0 max-w-[14rem] items-center gap-1.5 rounded-sm border border-line-strong bg-raised px-1.5 py-0.5 shadow-raised hover:border-faint"
+        className="flex min-w-0 max-w-[15rem] items-center gap-1.5 rounded-sm border border-line-strong bg-raised px-1.5 py-0.5 shadow-raised hover:border-faint"
       >
-        <span className="text-label uppercase tracking-wide text-faint">rec</span>
+        <Film aria-hidden size={13} strokeWidth={1.75} className="shrink-0 text-muted" />
         {/* A file in flight shows by name rather than by derived id: the name is what the person just
             picked out of a folder, and until it parses there is nothing else honest to call it. */}
         <span className="min-w-0 truncate font-mono text-meta text-ink">
-          {loadingId ?? loadingName ?? openId ?? 'none loaded'}
+          {loadingId ?? loadingName ?? openId ?? 'None Loaded'}
         </span>
         {loading ? (
           /*
@@ -285,7 +271,6 @@ export function RecordingPicker() {
              never have. */
           event.target.value = ''
           if (!file) return
-          setLastAttempt('file')
           void loadFile(file)
         }}
       />
@@ -330,7 +315,7 @@ export function RecordingPicker() {
                     isActive ? 'bg-panel' : ''
                   }`}
                 >
-                  <p className="flex items-baseline gap-1.5">
+                  <p className="flex items-center gap-1.5">
                     <FolderOpen
                       aria-hidden
                       size={14}
@@ -361,13 +346,16 @@ export function RecordingPicker() {
                   isActive ? 'bg-panel' : ''
                 }`}
               >
-                <p className="flex items-baseline gap-1.5">
+                <p className="flex items-center gap-1.5">
                   {isOpen ? (
                     <Check aria-hidden size={14} strokeWidth={2} className="shrink-0 text-ok" />
                   ) : (
-                    /* Holds the tick's column so the ids line up whether or not one is open. Its width and
-                       the indent below are the icon's 14px plus the 6px `gap-1.5`. */
-                    <span aria-hidden className="w-3.5 shrink-0" />
+                    <CirclePlay
+                      aria-hidden
+                      size={14}
+                      strokeWidth={1.75}
+                      className="shrink-0 text-faint"
+                    />
                   )}
                   <span
                     className={`min-w-0 truncate font-mono text-body ${isOpen ? 'text-ink' : 'text-muted'}`}
@@ -375,7 +363,7 @@ export function RecordingPicker() {
                     {sample.id}
                   </span>
                   {isOpen ? (
-                    <span className="ml-auto shrink-0 text-label uppercase tracking-wide text-ok">
+                    <span className="ml-auto shrink-0 rounded-sm bg-ok/15 px-1 text-label uppercase tracking-wide text-ok">
                       open
                     </span>
                   ) : null}
@@ -405,46 +393,6 @@ export function RecordingPicker() {
         </ul>
       ) : null}
 
-      {/*
-        `max-w-full` rather than a fixed measure: at 720px a `36rem` paragraph is wider than the window,
-        and the one component whose job is to explain a failure must not become one. Absolutely
-        positioned, because the header is `shrink-0` and a wrapping error message that grew it would take
-        the height out of the replay panel — the frame must not move because a fetch failed.
-      */}
-      {error ? (
-        <p
-          role="alert"
-          className="absolute right-0 top-[calc(100%+4px)] z-20 flex w-[24rem] max-w-[calc(100vw-1.5rem)] items-start gap-1.5 rounded-md border border-error/50 bg-error/10 px-2 py-1.5 text-meta leading-snug text-error"
-        >
-          <TriangleAlert aria-hidden size={14} strokeWidth={1.75} className="mt-px shrink-0" />
-          <span>
-            {/* The period is conditional because the two sources punctuate differently and both are
-                quoted verbatim: `loadRecording` throws whole sentences ending in one, while a
-                `SyntaxError` and an HTTP status do not. Appending unconditionally gave "no events..",
-                and not appending ran the reason straight into the hint. */}
-            <span className="font-mono">{error.id}</span> did not load: {error.message}
-            {error.message.endsWith('.') ? '' : '.'}{' '}
-            {/* The hint has to branch. Sending someone to `traces/public/recordings/` is the right next
-                step for a sample that is not there, and nonsense for a file they picked off their own
-                disk — it tells them to look for their file inside this repository. */}
-            <span className="text-error/70">
-              {error.source === 'sample' ? (
-                <>
-                  Samples live in <span className="font-mono">traces/public/recordings/</span> — record
-                  one against <span className="font-mono">bugbait</span> if it is not there yet.
-                </>
-              ) : (
-                <>
-                  Traces reads rrweb JSON: the event array{' '}
-                  <span className="font-mono">record</span> collects, or the{' '}
-                  <span className="font-mono">{'{ events: … }'}</span> wrapper a downloaded recording
-                  has.
-                </>
-              )}
-            </span>
-          </span>
-        </p>
-      ) : null}
     </div>
   )
 }

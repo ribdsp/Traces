@@ -2,7 +2,6 @@
 
 import { Bot, History, Undo2, User } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatAgo, useWallClock } from '@/components/ui/use-clock'
 import { SectionHeading } from '@/components/ui/section-heading'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
@@ -24,8 +23,8 @@ import type { ActivityEntry, Author } from '@/types/domain'
  *     while an agent works is the case that matters: `[overflow-anchor:none]` plus a scroll correction keeps
  *     the same lines under the eye in every browser, rather than depending on native scroll anchoring, which
  *     Safari does not implement.
- *   - "3s ago", from `entry.at`, which is wall-clock — never recording time. The exact clock time is in the
- *     title, for anyone cross-referencing this against a console log.
+ *   - live seconds ("12s ago"), from `entry.at`, which is wall-clock — never recording time. The exact clock
+ *     time is in the title, for anyone cross-referencing this against a console log.
  *   - undo where `undoable` is set. Only agent entries carry it, which is the asymmetry the project argues
  *     for: the human can revert the agent, and the agent cannot revert the human.
  *   - an empty state that says what will appear here. "No activity" describes the widget; this describes the
@@ -51,8 +50,8 @@ export function ActivityFeed() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const previousHeight = useRef(0)
 
-  /** Coarse: the labels are minutes and seconds, and a feed that re-renders faster than it changes is waste. */
-  const now = useWallClock(5_000)
+  /** One second: the labels are live seconds, and a coarser tick would sit still between minute jumps. */
+  const now = useWallClock(1_000)
 
   useEffect(() => {
     const list = scrollRef.current
@@ -89,7 +88,7 @@ export function ActivityFeed() {
         {activity.length === 0 ? (
           <EmptyFeed />
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {/* Newest first. Reversed for display only — the store's order is the record. */}
             {[...activity].reverse().map((entry) => (
               <FeedRow key={entry.id} entry={entry} now={now} />
@@ -101,38 +100,53 @@ export function ActivityFeed() {
   )
 }
 
+const ROW: Record<Author, { surface: string; mark: string }> = {
+  human: { surface: 'bg-human/5', mark: 'bg-human/15 text-human' },
+  agent: { surface: 'bg-agent/5', mark: 'bg-agent/15 text-agent' },
+}
+
 function FeedRow({ entry, now }: { entry: ActivityEntry; now: number | null }) {
+  const isAgent = entry.author === 'agent'
+  const Icon = isAgent ? Bot : User
+  const tone = ROW[entry.author]
+
   return (
-    <li
-      className={`flex items-center gap-1 border-l-2 pl-1.5 text-body leading-relaxed ${RAILS[entry.author]}`}
-    >
-      <span className="min-w-0 text-ink">{entry.description}</span>
-      <AuthorBadge author={entry.author} variant="icon" />
-
-      <span className="ml-auto flex shrink-0 items-baseline gap-1.5 pl-1">
-        {/*
-          Absolute time until the clock starts, so the prerendered first paint is not a wall-clock read
-          the build could not have made.
-        */}
+    <li className={`rounded-sm border-l-2 ${RAILS[entry.author]} ${tone.surface} px-1.5 py-1.5`}>
+      <div className="flex gap-1.5">
         <span
-          className="font-mono text-label tabular-nums text-faint"
-          title={new Date(entry.at).toLocaleTimeString()}
+          title={isAgent ? 'agent' : 'you'}
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm ${tone.mark}`}
         >
-          {now === null ? '' : formatAgo(entry.at, now)}
+          <Icon aria-hidden size={12} strokeWidth={1.75} />
+          <span className="sr-only">{isAgent ? 'agent' : 'you'}</span>
         </span>
-
-        {entry.undoable ? (
-          <button
-            type="button"
-            onClick={() => sessionActions().undo(entry.id)}
-            title="Undo exactly this contribution. Everything else the agent did stays."
-            className="inline-flex items-center gap-0.5 rounded-sm text-label uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink"
-          >
-            <Undo2 aria-hidden size={12} strokeWidth={1.75} />
-            undo
-          </button>
-        ) : null}
-      </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-body leading-snug text-ink">{entry.description}</p>
+          <p className="mt-0.5 flex items-center gap-1.5">
+            {/*
+              Absolute time until the clock starts, so the prerendered first paint is not a wall-clock read
+              the build could not have made.
+            */}
+            <span
+              className="font-mono text-label tabular-nums text-faint"
+              title={new Date(entry.at).toLocaleTimeString()}
+            >
+              {now === null ? '' : formatAgo(entry.at, now)}
+            </span>
+            {entry.undoable ? (
+              <button
+                type="button"
+                onClick={() => sessionActions().undo(entry.id)}
+                title="Undo exactly this contribution. Everything else the agent did stays."
+                className="inline-flex items-center gap-0.5 rounded-sm text-label uppercase tracking-wide text-muted underline decoration-dotted hover:text-ink"
+              >
+                <Undo2 aria-hidden size={12} strokeWidth={1.75} />
+                undo
+              </button>
+            ) : null}
+          </p>
+        </div>
+      </div>
     </li>
   )
 }

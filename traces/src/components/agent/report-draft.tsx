@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Copy, FileText, TriangleAlert } from 'lucide-react'
+import { Check, Copy, FileText, TriangleAlert, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
@@ -112,12 +112,13 @@ export function ReportDraft() {
   const unverified = report.steps.filter((step) => !step.verified).length
 
   return (
-    <section className="border-b border-line p-3">
+    <section className={`border-b p-3 ${awaitingAgent ? 'border-warn/30 bg-warn/5' : 'border-line'}`}>
       <SectionHeading label="Report draft" icon={FileText}>
         <AuthorBadge author={report.author} />
         {awaitingAgent ? (
-          <span className="ml-auto pl-2 text-right text-label leading-tight text-warn/90">
-            waiting on your decision
+          <span className="ml-auto flex items-center gap-1.5 rounded-sm border border-warn/30 bg-warn/10 px-1.5 py-px text-label leading-tight text-warn">
+            <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-warn" />
+            waiting on you
           </span>
         ) : decision !== null ? (
           <span className="ml-auto text-label uppercase tracking-wide text-muted">
@@ -261,8 +262,9 @@ export function ReportDraft() {
                 : 'Send the report back approved. This is what the agent’s call is waiting on.'
               : 'No agent is waiting on this draft, but your edits are still recorded.'
           }
-          className="rounded-sm border border-human/50 bg-human/10 px-2 py-0.5 text-label font-medium uppercase tracking-wide text-human hover:border-human"
+          className="inline-flex items-center gap-1 rounded-sm border border-human/50 bg-human/10 px-2 py-0.5 text-label font-medium uppercase tracking-wide text-human hover:border-human"
         >
+          <Check aria-hidden size={11} strokeWidth={2} />
           {edited ? 'approve with edits' : 'approve'}
         </button>
 
@@ -274,8 +276,9 @@ export function ReportDraft() {
           type="button"
           onClick={() => commit(false)}
           title="Tell the agent the draft is not good enough. It is asked what to support better, not to resend it."
-          className="rounded-sm border border-line-strong bg-raised px-2 py-0.5 text-label font-medium uppercase tracking-wide text-muted shadow-raised hover:border-faint hover:text-ink"
+          className="inline-flex items-center gap-1 rounded-sm border border-line-strong bg-raised px-2 py-0.5 text-label font-medium uppercase tracking-wide text-muted shadow-raised hover:border-faint hover:text-ink"
         >
+          <X aria-hidden size={11} strokeWidth={2} />
           reject
         </button>
 
