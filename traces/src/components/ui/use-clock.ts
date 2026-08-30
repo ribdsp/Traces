@@ -28,15 +28,14 @@ export function useWallClock(intervalMs: number): number | null {
 }
 
 /**
- * "just now", "12s ago", "4m ago".
+ * "just now", then live seconds: "12s ago", "90s ago".
  *
- * Coarse on purpose: the feed is read to reconstruct an order of events, and a precise age on every line
- * invites reading it as a measurement. Minutes is as far as it goes — a session that outlives that is not
- * one anybody is still watching live.
+ * Seconds only, never minutes. The activity line is watched while the agent works, and a counter that
+ * jumps to "1m ago" and then sits still reads as frozen. Ticking in seconds is the whole point of the
+ * clock the feed already subscribed to.
  */
 export function formatAgo(atEpochMs: number, nowEpochMs: number): string {
   const seconds = Math.max(Math.round((nowEpochMs - atEpochMs) / 1000), 0)
-  if (seconds < 3) return 'just now'
-  if (seconds < 60) return `${seconds}s ago`
-  return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 2) return 'just now'
+  return `${seconds}s ago`
 }

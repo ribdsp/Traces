@@ -70,7 +70,7 @@
  * unreadable in a way that a plain rule is not. The track and the fill behind the handle *are*
  * Tailwind, in the component, because those are ordinary elements.
  *
- * The input itself is transparent and full-height: it is the 20px hit area over a 4px track, so the
+ * The input itself is transparent and full-height: it is the 24px hit area over a 6px track, so the
  * handle can be aimed with a mouse and seen on video. Suppressing the native track is what makes the
  * painted one visible underneath.
  */
@@ -82,31 +82,36 @@
 
 .traces-scrubber::-webkit-slider-runnable-track {
   background: transparent;
-  height: 100%;
+  height: 6px;
 }
 
 .traces-scrubber::-moz-range-track {
   background: transparent;
-  height: 100%;
+  height: 6px;
+  border: none;
 }
 
 .traces-scrubber::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
+  /* Track is 6px, thumb is 13px: this is what sits the disc on the centre of the bar. */
+  margin-top: -3.5px;
   border-radius: 9999px;
   background: theme('colors.ink');
   /* A ring in the surface colour, so the handle reads as sitting *on* the track rather than in it. */
   border: 2px solid theme('colors.panel');
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
 }
 
 .traces-scrubber::-moz-range-thumb {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
   border-radius: 9999px;
   background: theme('colors.ink');
   border: 2px solid theme('colors.panel');
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
 }
 
 .traces-scrubber:disabled::-webkit-slider-thumb {

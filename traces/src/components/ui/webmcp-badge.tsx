@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, MessageSquare, Wrench } from 'lucide-react'
+import { Wrench } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { allTools } from '@/lib/webmcp/register-tools'
 import { onToolChange } from '@/lib/webmcp/tool-change'
@@ -24,29 +24,7 @@ import type { RegistrationResult } from '@/lib/webmcp/register-tools'
  *     hideable is the banner row, and that row is still in flow with no close control.
  */
 
-const DEFINITION =
-  'Structured tools on this page that a compatible agent can discover and call. Not a service: nothing here runs once the tab closes.'
-
-/**
- * The part people get wrong about WebMCP, so it is stated in the status block in every state: this is not
- * a service. There is no endpoint, no key, and nothing left running when the tab closes.
- *
- * Kept to two lines. Every line spent here is a line of the tool grid pushed below the fold of a panel
- * that is capped in height, and the grid is the part that answers "what can it actually do".
- */
-const REACH = 'Reachable only while this page is open and you have granted access.'
-
-/**
- * Prompts that are pasteable as-is, in the order an investigation actually goes: orient, narrow, check,
- * write up. Each one lands on a different group in `allTools`, so a judge working down the list exercises
- * the read tools, the search tools and a blocking collaborate tool without being told which is which.
- */
-const EXAMPLES = [
-  'What broke in this recording, and when?',
-  'Find the last moment the submit button was still enabled.',
-  'Read the console around the failure and tell me what threw.',
-  'Draft a bug report for what you found, with timestamps I can check.',
-] as const
+const REACH = 'Reachable only while this page is open. Nothing here runs on a server.'
 
 type Health = 'idle' | 'live' | 'warn' | 'error'
 
@@ -155,9 +133,9 @@ export function WebMcpPanel({ registration }: { registration: RegistrationResult
   return (
     <div
       id="webmcp-panel"
-      className="max-h-72 w-80 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-md border border-line-strong bg-panel shadow-raised"
+      className="max-h-[min(28rem,calc(100vh-6rem))] w-96 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-md border border-line-strong bg-panel shadow-raised"
     >
-      <div className="border-b border-line px-3 py-2.5">
+      <div className="sticky top-0 z-10 border-b border-line bg-panel px-3 py-2.5">
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-ink">WebMCP</span>
           <span
@@ -165,36 +143,30 @@ export function WebMcpPanel({ registration }: { registration: RegistrationResult
           >
             {STATE_WORD[health]}
           </span>
+          {tools.length > 0 ? (
+            <span className="ml-auto font-mono text-label tabular-nums text-muted">{tools.length}</span>
+          ) : null}
         </div>
-        <p className="mt-1 text-body leading-relaxed text-muted">{DEFINITION}</p>
-      </div>
-
-      <div className="border-b border-line px-3 py-2.5">
-        <h3 className="flex items-center gap-1.5 text-micro uppercase tracking-wide text-faint">
-          <Activity aria-hidden size={12} strokeWidth={1.75} className="shrink-0" />
-          Status
-        </h3>
         <p className="mt-1 text-body leading-relaxed text-ink">
           <StatusSentence health={health} count={tools.length} />
         </p>
-        <p className="mt-1 text-label leading-relaxed text-faint">{REACH}</p>
+        <p className="mt-0.5 text-label leading-relaxed text-faint">{REACH}</p>
       </div>
 
       {tools.length > 0 ? (
-        <div className="border-b border-line px-3 py-2.5">
-          <h3 className="flex items-center gap-1.5 text-micro uppercase tracking-wide text-faint">
+        <div className="px-3 py-2.5">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-micro uppercase tracking-wide text-faint">
             <Wrench aria-hidden size={12} strokeWidth={1.75} className="shrink-0" />
-            Tools on this page
-            <span className="ml-auto font-mono tabular-nums">{tools.length}</span>
+            Tools
           </h3>
-          <ul className="mt-1.5 grid grid-cols-2 gap-1.5">
+          <ul className="grid grid-cols-2 gap-1.5">
             {tools.map((tool) => (
               <li
                 key={tool.name}
-                className="rounded-sm border border-line bg-raised p-1.5"
+                className="rounded-sm border border-line bg-raised px-2 py-1.5"
                 title={tool.full}
               >
-                <p className="font-mono text-label leading-none text-ink">{tool.name}</p>
+                <p className="truncate font-mono text-label leading-none text-ink">{tool.name}</p>
                 {/*
                   Two lines, hard. `firstSentence` is already the short form and it is still six lines
                   wide for `read_session_meta` in a 145px column, which turns sixteen cards into a wall
@@ -207,28 +179,6 @@ export function WebMcpPanel({ registration }: { registration: RegistrationResult
           </ul>
         </div>
       ) : null}
-
-      <div className="px-3 py-2.5">
-        <h3 className="flex items-center gap-1.5 text-micro uppercase tracking-wide text-faint">
-          <MessageSquare aria-hidden size={12} strokeWidth={1.75} className="shrink-0" />
-          Try asking
-        </h3>
-        {/*
-          Quoted and left as prose rather than made copyable. A copy button here would need its own
-          clipboard-failure path — `report-draft.tsx` has one because a report is the artefact worth
-          that code, and a four-word prompt someone can retype is not.
-        */}
-        <ul className="mt-1.5 space-y-1">
-          {EXAMPLES.map((example) => (
-            <li
-              key={example}
-              className="rounded-sm border border-line bg-raised/50 px-1.5 py-1 text-label leading-snug text-muted"
-            >
-              “{example}”
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   )
 }

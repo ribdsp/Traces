@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeftRight, Keyboard, KeyboardOff, ListTodo, Play, SlidersHorizontal } from 'lucide-react'
+import { ChevronsLeftRight, CirclePlay, Command, Film, Inbox, LogOut } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { AgentLane, AGENT_LANE_INPUT_ID } from '@/components/agent/agent-lane'
@@ -13,6 +13,7 @@ import { ReplayStage } from '@/components/player/replay-stage'
 import { Timeline } from '@/components/timeline/timeline'
 import { RecordingPicker } from '@/components/ui/recording-picker'
 import { ResizableSplit } from '@/components/ui/resizable-split'
+import { ErrorToasts } from '@/components/ui/error-toast'
 import { TOOL_STATUS_SLOT_ID } from '@/components/ui/tool-status-banner'
 
 /**
@@ -61,11 +62,11 @@ const GITHUB_URL = 'https://github.com/ribdsp/Traces'
  * text: a glyph for "space" is a puzzle, and the point of this list is to be pressed, not decoded.
  */
 const LEGEND: readonly { keys: readonly string[]; short: string; does: string; icon: LucideIcon }[] = [
-  { keys: ['space'], short: 'Play', does: 'Play / pause', icon: Play },
-  { keys: ['←', '→'], short: 'Step', does: 'Step 100ms', icon: ArrowLeftRight },
-  { keys: [FOCUS_KEYS.agent], short: 'Queue', does: 'Focus queue', icon: ListTodo },
-  { keys: [FOCUS_KEYS.player], short: 'Player', does: 'Focus player', icon: SlidersHorizontal },
-  { keys: ['esc'], short: 'Release', does: 'Release focus', icon: KeyboardOff },
+  { keys: ['space'], short: 'Play', does: 'Play / pause', icon: CirclePlay },
+  { keys: ['←', '→'], short: 'Step', does: 'Step 100ms', icon: ChevronsLeftRight },
+  { keys: [FOCUS_KEYS.agent], short: 'Queue', does: 'Focus queue', icon: Inbox },
+  { keys: [FOCUS_KEYS.player], short: 'Player', does: 'Focus player', icon: Film },
+  { keys: ['esc'], short: 'Release', does: 'Release focus', icon: LogOut },
 ]
 
 /** Shared by both renderings of the legend, so the prose and the disclosure cannot disagree. */
@@ -193,6 +194,7 @@ export default function Home() {
       />
 
       <Timeline />
+      <ErrorToasts />
     </main>
   )
 }
@@ -234,20 +236,22 @@ function ShortcutLegend() {
             header, and the glyph is what makes it findable at a glance. The word beside it is still the
             accessible name, so the icon stays hidden from assistive tech.
           */}
-          <Keyboard aria-hidden size={13} strokeWidth={1.75} />
-          keys
+          <Command aria-hidden size={13} strokeWidth={1.75} />
+          Keys
         </summary>
 
         {/*
           `raised` rather than a heavier border to lift the popover off the header. Drop shadows are out,
           so elevation here is carried by the surface token that exists for it.
         */}
-        <ul className="absolute right-0 top-[calc(100%+4px)] z-20 w-max min-w-[12.5rem] space-y-1 rounded-md border border-line-strong bg-raised px-2 py-1.5 text-label text-muted shadow-raised">
+        <ul className="absolute right-0 top-[calc(100%+4px)] z-20 w-max min-w-[14rem] space-y-0.5 rounded-md border border-line-strong bg-raised p-1 text-label text-muted shadow-raised">
           {LEGEND.map((item) => (
-            <li key={item.does} className="flex items-center gap-2">
+            <li key={item.does} className="flex items-center gap-2 rounded-sm px-1.5 py-1 hover:bg-panel">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-line bg-base text-muted">
+                <item.icon aria-hidden size={12} strokeWidth={1.75} />
+              </span>
+              <span className="min-w-[7rem] text-ink">{item.does}</span>
               <LegendKeys keys={item.keys} />
-              <item.icon aria-hidden size={13} strokeWidth={1.75} className="shrink-0 text-muted" />
-              <span className="text-ink">{item.does}</span>
             </li>
           ))}
         </ul>

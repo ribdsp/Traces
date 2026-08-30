@@ -57,6 +57,16 @@ type Exchange = {
   answered: boolean
 }
 
+/** Compact wait, so a stale gate does not print `waiting 9437s`. */
+function formatWait(ms: number): string {
+  const seconds = Math.max(0, Math.round(ms / 1000))
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h ${minutes % 60}m`
+}
+
 export function AskHumanVisualPrompt() {
   const pendingAsk = useSessionStore((s) => s.pendingAsk)
   const [resolved, setResolved] = useState<Exchange | null>(null)
@@ -97,40 +107,42 @@ export function AskHumanVisualPrompt() {
     const timedOut = waitedMs > GATE_TIMEOUT_MS
 
     return (
-      <section className="border-b border-warn/30 bg-warn/5 p-3">
+      <section className="border-b border-warn/40 bg-warn/5 p-3">
         {/*
           `Eye` rather than a warning triangle: nothing is broken — the agent has hit a judgement a person has
           to make by looking, which is also what the answer consists of. `MarkPointOverlay` carries the same
           glyph on the player, so the two halves of this one interaction are recognisable as each other.
         */}
         <SectionHeading rank="alert" label="Agent needs your eyes" icon={Eye}>
-          <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono text-label tabular-nums text-muted">
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 rounded-sm border border-warn/30 bg-warn/10 px-1.5 py-px font-mono text-label tabular-nums text-warn">
             {/*
-              `animate-pulse` rather than a spinner, for the reason `webmcp-badge.tsx` uses two chevrons:
+              `animate-pulse` rather than a spinner, for the reason `recording-picker.tsx` uses two chevrons:
               `globals.css` zeroes animation duration under `prefers-reduced-motion`, which lands opacity on
               1 and leaves a solid amber dot. A rotating glyph would stop dead and read as a hang. Nothing
               here depends on the motion either way — the word "waiting" and a count that climbs every
               second already say it, and the dot is the part that catches an eye that was elsewhere.
             */}
             <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-warn" />
-            waiting {Math.round(waitedMs / 1000)}s
+            {formatWait(waitedMs)}
           </span>
         </SectionHeading>
 
-        <p className="text-body leading-relaxed text-ink">{pendingAsk.question}</p>
+        <p className="rounded-sm border border-warn/20 bg-panel/60 px-2 py-1.5 text-body leading-relaxed text-ink">
+          {pendingAsk.question}
+        </p>
 
         <p className="mt-1.5 text-meta leading-relaxed text-muted">
-          Answer on the player: put the playhead on the moment you mean, then pick one of the options over
-          the replay.
+          Answer on the player — put the playhead on the moment you mean, then pick an option over the
+          replay.
           {pendingAsk.hintAtMs !== undefined
-            ? ` The agent suggested ${formatSeconds(pendingAsk.hintAtMs)}.`
+            ? ` Suggested ${formatSeconds(pendingAsk.hintAtMs)}.`
             : ''}
         </p>
 
         {timedOut ? (
-          <p className="mt-1.5 border-l-2 border-warn/40 pl-2 text-meta leading-relaxed text-warn/80">
-            The agent’s call has already returned — it waited {Math.round(GATE_TIMEOUT_MS / 1000)}s and got a
-            ticket back, so it is retrying rather than sitting still. Your answer still reaches it.
+          <p className="mt-1.5 rounded-sm border border-warn/30 bg-warn/10 px-2 py-1.5 text-meta leading-relaxed text-warn">
+            The first call already returned a ticket after {Math.round(GATE_TIMEOUT_MS / 1000)}s and is
+            retrying. Your answer still reaches it.
           </p>
         ) : null}
       </section>

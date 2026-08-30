@@ -2,12 +2,14 @@
 
 import 'rrweb/dist/style.css'
 
-import { TriangleAlert } from 'lucide-react'
+import { FileJson, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { MarkPointOverlay } from '@/components/player/mark-point-overlay'
 import { StageEmptyState } from '@/components/player/stage-empty-state'
 import { usePlayheadSync } from '@/components/player/use-playhead'
 import { createReplayEngine, setActiveEngine } from '@/lib/replay/replay-engine'
+import { reportError } from '@/components/ui/error-toast'
+import { useFileLoader } from '@/components/ui/use-file-loader'
 import { sessionActions, useSessionStore } from '@/lib/store/session'
 
 /**
@@ -49,6 +51,9 @@ export function ReplayStage() {
 
   const [available, setAvailable] = useState<{ width: number; height: number } | null>(null)
   const [engineError, setEngineError] = useState<string | null>(null)
+  const [fileOver, setFileOver] = useState(false)
+  const dragDepth = useRef(0)
+  const { load: loadFile } = useFileLoader()
 
   /**
    * The other half of "who moves the playhead", and it lives here because this is where the engine
@@ -87,7 +92,9 @@ export function ReplayStage() {
     try {
       engine = createReplayEngine({ mount, recording, checkpoints })
     } catch (error) {
-      setEngineError(error instanceof Error ? error.message : String(error))
+      const message = error instanceof Error ? error.message : String(error)
+      setEngineError(message)
+      reportError('The replay engine did not start', message)
       return
     }
 
@@ -109,6 +116,27 @@ export function ReplayStage() {
   return (
     <div
       ref={frameRef}
+      onDragEnter={(event) => {
+        if (![...event.dataTransfer.types].includes('Files')) return
+        dragDepth.current += 1
+        setFileOver(true)
+      }}
+      onDragLeave={() => {
+        dragDepth.current = Math.max(0, dragDepth.current - 1)
+        if (dragDepth.current === 0) setFileOver(false)
+      }}
+      onDragOver={(event) => {
+        if (![...event.dataTransfer.types].includes('Files')) return
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
+      }}
+      onDrop={(event) => {
+        event.preventDefault()
+        dragDepth.current = 0
+        setFileOver(false)
+        const file = event.dataTransfer.files[0]
+        if (file) void loadFile(file)
+      }}
       className="relative flex h-full w-full items-center justify-center overflow-hidden bg-base p-3"
     >
       {recording && viewport ? (
@@ -139,6 +167,14 @@ export function ReplayStage() {
         <p className="absolute bottom-1 right-2 font-mono text-micro tabular-nums text-muted">
           {viewport.width}×{viewport.height} · {Math.round(scale * 100)}%
         </p>
+      ) : null}
+
+      {fileOver ? (
+        <div className="absolute inset-3 z-30 flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-ink bg-base/90 text-ink">
+          <FileJson aria-hidden size={32} strokeWidth={1.5} className="text-muted" />
+          <p className="text-title font-medium">Drop an rrweb JSON file</p>
+          <p className="text-meta text-muted">Read in this tab. Nothing is uploaded.</p>
+        </div>
       ) : null}
 
       {engineError ? <StageErrorState message={engineError} /> : null}

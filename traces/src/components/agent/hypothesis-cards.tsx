@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, FlaskConical, X } from 'lucide-react'
+import { Check, Clock, FlaskConical, X } from 'lucide-react'
 import { AuthorBadge } from '@/components/ui/author-badge'
 import { formatSeconds } from '@/components/ui/format-time'
 import { SectionHeading } from '@/components/ui/section-heading'
@@ -80,13 +80,14 @@ export function HypothesisCards() {
   const undecided = hypotheses.filter((hypothesis) => hypothesis.status === 'proposed').length
 
   return (
-    <section className="border-b border-line p-3">
+    <section className={`border-b p-3 ${undecided > 0 ? 'border-warn/30 bg-warn/5' : 'border-line'}`}>
       <SectionHeading label="Hypotheses" icon={FlaskConical}>
         {undecided > 0 ? (
-          <span className="ml-auto pl-2 text-right text-label leading-tight text-warn/90">
+          <span className="ml-auto flex items-center gap-1.5 rounded-sm border border-warn/30 bg-warn/10 px-1.5 py-px text-label leading-tight text-warn">
+            <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-warn" />
             {undecided === hypotheses.length
-              ? 'the agent is waiting on your call'
-              : `${undecided} still undecided`}
+              ? 'waiting on you'
+              : `${undecided} still open`}
           </span>
         ) : null}
       </SectionHeading>
@@ -112,7 +113,7 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
       <div className="flex items-baseline gap-1.5">
         {/* Right-aligned in a fixed column: the rank is a number in a list of numbers, and 10 must not
             push the tenth claim a character further in than the first nine. */}
-        <span className="w-3 shrink-0 text-right font-mono text-label tabular-nums text-muted">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-line bg-raised font-mono text-label tabular-nums text-muted">
           {position}
         </span>
         <p className={`text-body leading-relaxed ${treatment.text}`}>{hypothesis.text}</p>
@@ -169,12 +170,13 @@ function HypothesisCard({ hypothesis, position }: { hypothesis: Hypothesis; posi
                 type="button"
                 onClick={() => sessionActions().setCurrentTime(item.atMs, 'human')}
                 title={`Seek to ${item.atMs}ms — ${item.note}`}
-                className="flex items-baseline gap-1 rounded-sm border border-line-strong bg-raised px-1 py-0.5 text-left shadow-raised hover:border-faint"
+                className="flex items-center gap-1 rounded-sm border border-line-strong bg-raised px-1 py-0.5 text-left shadow-raised hover:border-faint"
               >
                 {/*
                   `ink`, not `human`: a seek is an affordance both parties use, and spending an authorship
                   token on one would make it decorative. The border and the mono type carry the link.
                 */}
+                <Clock aria-hidden size={11} strokeWidth={1.75} className="shrink-0 self-center text-faint" />
                 <span className="font-mono text-label tabular-nums text-ink">
                   {formatSeconds(item.atMs)}
                 </span>
@@ -234,12 +236,17 @@ function Verdict({
             ? `Change the record to ${label}d. The agent already has your first answer — this does not ask it again.`
             : `Mark this ${label}d. This is what the agent's call is waiting for.`
       }
-      className={`rounded-sm border px-2 py-0.5 text-label font-medium uppercase tracking-wide ${
+      className={`inline-flex items-center gap-1 rounded-sm border px-2 py-0.5 text-label font-medium uppercase tracking-wide ${
         active
           ? `${activeClass} cursor-default`
           : 'border-line-strong bg-raised text-muted shadow-raised hover:border-faint hover:text-ink'
       }`}
     >
+      {label === 'promote' ? (
+        <Check aria-hidden size={11} strokeWidth={2} />
+      ) : (
+        <X aria-hidden size={11} strokeWidth={2} />
+      )}
       {label}
     </button>
   )

@@ -160,11 +160,14 @@ export function PlayerControls() {
         `.traces-scrubber` in globals.css. `min-w` keeps it from collapsing to nothing when the row wraps
         at 720px, where it is the widest thing on the second line.
       */}
-      <div className="relative flex h-5 min-w-[8rem] flex-1 items-center">
-        <div aria-hidden className="absolute inset-x-0 h-1 rounded-full bg-line" />
+      <div className="relative flex h-6 min-w-[8rem] flex-1 items-center">
         <div
           aria-hidden
-          className={`absolute left-0 h-1 rounded-full ${disabled ? 'bg-line-strong' : 'bg-ink'}`}
+          className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-line"
+        />
+        <div
+          aria-hidden
+          className={`absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full ${disabled ? 'bg-line-strong' : 'bg-ink'}`}
           style={{ width: `${progress}%` }}
         />
         {/*
@@ -191,7 +194,7 @@ export function PlayerControls() {
             store — so the control itself must not claim an author. The `moved by AGENT` badge at the end
             of the row is what says who did, and it is the only thing here that may.
           */
-          className="traces-scrubber relative h-5 w-full cursor-pointer disabled:cursor-default"
+          className="traces-scrubber relative h-6 w-full cursor-pointer disabled:cursor-default"
         />
       </div>
 
@@ -202,19 +205,35 @@ export function PlayerControls() {
       />
 
       {/*
-        A playhead that moves on its own is uncanny until it is attributed. This is deliberately quiet —
-        it explains something already on screen rather than announcing it — and it disappears the moment
-        the human moves the playhead themselves.
+        A playhead that moves on its own is uncanny until it is attributed. Always on, so the slot does
+        not sit empty and then jump when the agent first seeks. `whitespace-nowrap` because this row
+        wraps at 720px and the words must not wrap inside the chip.
       */}
-      <span className="flex w-28 shrink-0 items-center justify-end gap-1 text-label text-faint">
-        {lastSeekAuthor === 'agent' ? (
-          <>
-            moved by
-            <AuthorBadge author="agent" />
-          </>
-        ) : null}
-      </span>
+      <SeekAttribution disabled={disabled} author={lastSeekAuthor} />
     </div>
+  )
+}
+
+function SeekAttribution({
+  disabled,
+  author,
+}: {
+  disabled: boolean
+  author: 'human' | 'agent' | null
+}) {
+  return (
+    <span className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-sm border border-line bg-raised px-1.5 py-0.5 text-label text-faint shadow-raised">
+      {disabled ? (
+        'No Recording'
+      ) : author === null ? (
+        'Ready'
+      ) : (
+        <>
+          Moved by
+          <AuthorBadge author={author} className="!ml-0" />
+        </>
+      )}
+    </span>
   )
 }
 

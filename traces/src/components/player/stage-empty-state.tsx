@@ -1,7 +1,10 @@
 'use client'
 
-import { CirclePlay, Layers, Plug, TriangleAlert } from 'lucide-react'
+import { CirclePlay, FolderOpen, Layers, Plug } from 'lucide-react'
+import { useRef } from 'react'
+import { reportSuccess } from '@/components/ui/error-toast'
 import { SAMPLE_RECORDINGS } from '@/components/ui/sample-recordings'
+import { useFileLoader } from '@/components/ui/use-file-loader'
 import { useSampleLoader } from '@/components/ui/use-sample-loader'
 
 /**
@@ -17,6 +20,10 @@ import { useSampleLoader } from '@/components/ui/use-sample-loader'
  *   3. how to get WebMCP at all, since on a browser without it nothing below is callable;
  *   4. a recording, in one click. Prose that ends without an action gets read once and then closed.
  *
+ * The recording can now be the reader's own, which is why this panel is also the drop target: someone
+ * arriving from the README with a file they just recorded has no reason to guess that the header holds a
+ * menu, and the largest empty rectangle on screen is the one they will aim at.
+ *
  * It also holds the long description that used to truncate in the header, and that is the right home for
  * it: it is onboarding, so it is wanted exactly when there is no recording and in the way once there is.
  * The header keeps a short standing subtitle — see `page.tsx`.
@@ -29,7 +36,12 @@ import { useSampleLoader } from '@/components/ui/use-sample-loader'
  * reports.
  */
 export function StageEmptyState() {
-  const { load, loadingId, error } = useSampleLoader()
+  const { load: loadSample, loadingId } = useSampleLoader()
+  const { load: loadFile, loadingName } = useFileLoader()
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const busy = loadingId !== null || loadingName !== null
 
   return (
     <div className="max-h-full w-full max-w-xl overflow-y-auto px-4 py-1 text-body leading-relaxed">
@@ -44,7 +56,7 @@ export function StageEmptyState() {
       <section className="mt-3 rounded-sm border border-line bg-panel/60 px-2.5 py-2">
         <h3 className="flex items-center gap-1.5 font-medium text-ink">
           <Layers aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
-          This panel is a DOM, not a video
+          This Panel is DOM
         </h3>
         <p className="mt-0.5 text-muted">
           Replaying a recording rebuilds the page as a live document. Every node is really there, and
@@ -58,7 +70,9 @@ export function StageEmptyState() {
           <CirclePlay aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Load a recording
         </h3>
-        <p className="mt-0.5 text-meta text-faint">Three samples. One click each.</p>
+        <p className="mt-0.5 text-meta text-faint">
+          Three samples, one click each — or a recording of your own.
+        </p>
 
         <ul className="mt-1.5 space-y-1">
           {SAMPLE_RECORDINGS.map((sample) => (
@@ -69,8 +83,10 @@ export function StageEmptyState() {
               */}
               <button
                 type="button"
-                onClick={() => load(sample)}
-                disabled={loadingId !== null}
+                onClick={() => {
+                  void loadSample(sample)
+                }}
+                disabled={busy}
                 className="flex w-full items-start gap-2 rounded-sm border border-line-strong bg-raised/40 px-2 py-1.5 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50"
               >
                 <span className="min-w-0 flex-1">
@@ -100,17 +116,57 @@ export function StageEmptyState() {
               </button>
             </li>
           ))}
+
+          {/*
+            Same row shape as the three above, prose title instead of a monospace stem so it does not
+            read as a fourth sample. The border change while a file is over the panel is not the whole
+            signal — the second line changes with it, because a dashed outline is a colour-and-shape cue
+            and one of those is not a state.
+          */}
+          <li>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+              className="flex w-full items-start gap-2 rounded-sm border border-line-strong bg-raised/40 px-2 py-1.5 text-left hover:border-faint hover:bg-raised/60 focus-visible:border-ink disabled:opacity-50"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-ink">Load a file…</span>
+                <span className="mt-0.5 block text-label leading-snug text-muted">
+                  {loadingName !== null ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+                      loading…
+                    </span>
+                  ) : (
+                    'An rrweb recording from your own app, read in this tab and never uploaded — there is no server to upload it to. Drop a JSON file anywhere on this panel.'
+                  )}
+                </span>
+              </span>
+              <FolderOpen
+                aria-hidden
+                size={16}
+                strokeWidth={1.75}
+                className="mt-0.5 shrink-0 text-faint"
+              />
+            </button>
+          </li>
         </ul>
 
-        {error ? (
-          <p role="alert" className="mt-1.5 flex items-start gap-1 text-label text-error">
-            <TriangleAlert aria-hidden size={14} strokeWidth={1.75} className="mt-px shrink-0" />
-            <span>
-              <span className="font-mono">{error.id}</span> did not load: {error.message}. Samples live in{' '}
-              <span className="font-mono">traces/public/recordings/</span>.
-            </span>
-          </p>
-        ) : null}
+        {/* Reset before loading so the same file can be chosen twice running; see the picker's copy of
+            this, which explains what the second silent pick would otherwise look like. */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            event.target.value = ''
+            if (file) void loadFile(file)
+          }}
+        />
+
       </section>
 
       <section className="mt-3">
@@ -118,27 +174,61 @@ export function StageEmptyState() {
           <Plug aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
           Getting WebMCP
         </h3>
-        <ul className="mt-1 space-y-1 text-muted">
-          <li className="flex gap-1.5">
-            <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted" />
-            <span>
-              <span className="text-ink">ChatGPT desktop</span>, in its in-app browser — works as it
-              comes.
-            </span>
+        <p className="mt-1 text-meta leading-relaxed text-muted">
+          WebMCP is how an agent finds the sixteen tools on this page. Turn it on in ChatGPT Desktop or
+          Chrome, then the header pill should read live. Replay still works without it — only the agent
+          needs the tools.
+        </p>
+        <ul className="mt-1.5 space-y-1.5">
+          <li className="rounded-sm border border-line bg-panel/60 px-2.5 py-2">
+            <p className="flex items-center gap-1.5 font-medium text-ink">
+              <img src="/image/ChatGPT.webp" alt="" width={20} height={20} draggable={false} onDragStart={(event) => event.preventDefault()} className="shrink-0 brightness-0 invert" />
+              ChatGPT Desktop
+            </p>
+            <p className="mt-1 text-meta leading-relaxed text-muted">
+              Open this page in the in-app browser, then turn site tools on:
+            </p>
+            <p className="mt-1 font-mono text-label leading-relaxed text-ink">
+              Settings → Browser → Permissions → Enable site tools
+            </p>
           </li>
-          <li className="flex gap-1.5">
-            <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted" />
-            <span>
-              <span className="text-ink">Chrome 149+</span> — turn on{' '}
-              <code className="text-ink">chrome://flags/#enable-webmcp-testing</code>, then reload.
-            </span>
+          <li className="rounded-sm border border-line bg-panel/60 px-2.5 py-2">
+            <p className="flex items-center gap-1.5 font-medium text-ink">
+              <img src="/image/Chrome.webp" alt="" width={20} height={20} draggable={false} onDragStart={(event) => event.preventDefault()} className="shrink-0" />
+              Chrome 149+
+            </p>
+            <p className="mt-1 text-meta leading-relaxed text-muted">
+              Turn on{' '}
+              <CopyFlag />
+              , then reload.
+            </p>
           </li>
         </ul>
-        <p className="mt-1.5 text-meta text-faint">
-          The bar at the top of the window says which of those you are on, and whether the sixteen tools
-          registered. Everything below works without WebMCP; only the agent needs it.
-        </p>
       </section>
     </div>
+  )
+}
+
+const CHROME_FLAG = 'chrome://flags/#enable-webmcp-testing'
+
+function CopyFlag() {
+  return (
+    <button
+      type="button"
+      title="Click to copy"
+      onClick={() => {
+        if (typeof navigator.clipboard === 'undefined') {
+          reportSuccess('Copy this flag', CHROME_FLAG)
+          return
+        }
+        void navigator.clipboard.writeText(CHROME_FLAG).then(
+          () => reportSuccess('Copied', CHROME_FLAG),
+          () => reportSuccess('Copy this flag', CHROME_FLAG),
+        )
+      }}
+      className="rounded-sm font-mono text-ink underline decoration-dotted hover:decoration-solid"
+    >
+      {CHROME_FLAG}
+    </button>
   )
 }
