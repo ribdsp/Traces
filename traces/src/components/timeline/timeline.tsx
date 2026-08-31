@@ -123,7 +123,7 @@ export function Timeline() {
             Nothing on this timeline yet — no recording is loaded.
           </span>
           <span className="mt-0.5 text-meta text-faint">
-            Load a sample from the list above. Your marks and the agent's findings will then share this
+            Load a sample from the list above. Your marks and the agent&apos;s findings will then share this
             axis, labelled by who found them.
           </span>
         </p>
