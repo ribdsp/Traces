@@ -181,10 +181,21 @@ function requestMethod(input: RequestInfo | URL, init?: RequestInit): string {
 }
 
 /**
+ * A response's declared type, in the `bodySummary` vocabulary a recorder uses when it has decided not
+ * to look inside the body. Shared by both patches so they cannot drift on the exact string
+ * `read_network` renders.
+ */
+function contentTypeSummary(contentType: string): string {
+  if (contentType === '') return 'not summarised'
+  return `${contentType.split(';')[0]}, not summarised`
+}
+
+/**
  * Report every fetch as a `network-request` custom event.
  *
  * rrweb captures no network activity at all — by design, since it reconstructs the DOM rather than the
- * session's I/O — so this monkey-patch is the only source of the data behind `read_network`. Successful
+ * session's I/O — so this monkey-patch and its XHR twin below are the whole source of the data behind
+ * `read_network`. Successful
  * requests are emitted too, with `ok: true`: `isNetworkFailureEvent` only cares about failures, but
  * `read_network` reports every request, and in this app the interesting request is one that *succeeded*.
  *
@@ -208,7 +219,7 @@ function installFetchRecorder(): () => void {
       const durationMs = Math.round(performance.now() - startedAt)
       const contentType = response.headers.get('content-type') ?? ''
 
-      let bodySummary = contentType === '' ? 'not summarised' : `${contentType.split(';')[0]}, not summarised`
+      let bodySummary = contentTypeSummary(contentType)
       if (contentType.includes('application/json')) {
         try {
           bodySummary = summariseBody((await response.clone().json()) as unknown)
@@ -242,6 +253,110 @@ function installFetchRecorder(): () => void {
   window.fetch = patched
   return () => {
     window.fetch = original
+  }
+}
+
+/** What `open` saw, held until `loadend` can report the outcome of it. */
+type PendingXhr = { method: string; url: string }
+
+/**
+ * Report every XMLHttpRequest as the same `network-request` custom event the fetch patch emits.
+ *
+ * The fetch patch sees `fetch` and nothing else, so an app on axios's default adapter, jQuery, or an
+ * older SDK recorded an empty network timeline — and `read_network` returning nothing reads as "the page
+ * made no requests" rather than "this recorder cannot see the ones it made". That is the worst shape a
+ * gap can take, because it looks like an answer. Both patches are installed now, so a mixed app reports
+ * both transports through one event shape and the agent never has to know which was used.
+ *
+ * **This patch reads no body, in either direction.** The fetch patch summarises a JSON response because
+ * it can clone one cheaply; the equivalent here means reading `responseText`, and that is where this
+ * recorder stops. `bodySummary` comes from the `Content-Type` *header* alone — the same
+ * `"application/json, not summarised"` form the fetch patch already emits for every non-JSON response —
+ * so the field is present and true without a byte of payload entering the file. The request body handed
+ * to `send` is passed straight through and never inspected. docs/threat-model.md (T4) is the reason, and
+ * a checkout is exactly the app whose XHR bodies carry an address and a card number.
+ *
+ * `loadend` is the one terminal event for all four outcomes — load, error, abort, timeout — and a
+ * `status` of 0 separates the three that never produced a response, which is the same split the fetch
+ * patch gets from try/catch.
+ *
+ * Patching the prototype means calling through whatever is already on it, so a page that brought its own
+ * XHR wrapper keeps it and this records on top. The descriptor check covers the other direction: a
+ * library that froze the prototype would otherwise turn `startRecording` into a thrown TypeError, and a
+ * missing network timeline is a far smaller problem than a recorder that refuses to start.
+ */
+function installXhrRecorder(): () => void {
+  // Server render, or any host without XHR: nothing to patch, and a teardown that does nothing is still
+  // a teardown, so the caller needs no branch of its own.
+  if (typeof XMLHttpRequest === 'undefined') return () => {}
+
+  const proto = XMLHttpRequest.prototype
+
+  const isWritable = (name: 'open' | 'send'): boolean => {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, name)
+    return descriptor === undefined || descriptor.writable === true
+  }
+  if (!isWritable('open') || !isWritable('send')) return () => {}
+
+  const originalOpen = proto.open
+  const originalSend = proto.send
+
+  // A WeakMap rather than a field on the request: another library's wrapper may already be keeping state
+  // there, and nothing this adds should be visible to the page being recorded.
+  const pending = new WeakMap<XMLHttpRequest, PendingXhr>()
+
+  proto.open = function patchedOpen(
+    this: XMLHttpRequest,
+    method: string,
+    url: string | URL,
+    async?: boolean,
+    username?: string | null,
+    password?: string | null,
+  ): void {
+    pending.set(this, { method: String(method).toUpperCase(), url: String(url) })
+
+    // `async` defaults to true and the credentials to null, per the XHR spec's own argument defaults, so
+    // normalising here is exactly what a two-argument `open` already meant — and it keeps this to one
+    // call through, rather than a branch per call form.
+    originalOpen.call(this, method, url, async ?? true, username, password)
+  }
+
+  proto.send = function patchedSend(
+    this: XMLHttpRequest,
+    body?: Document | XMLHttpRequestBodyInit | null,
+  ): void {
+    const opened = pending.get(this)
+
+    if (opened) {
+      const startedAt = performance.now()
+
+      this.addEventListener(
+        'loadend',
+        () => {
+          const { status } = this
+          const responded = status !== 0
+
+          record.addCustomEvent(NETWORK_REQUEST_TAG, {
+            url: opened.url,
+            method: opened.method,
+            status,
+            ok: responded && status >= 200 && status < 300,
+            durationMs: Math.round(performance.now() - startedAt),
+            bodySummary: responded
+              ? contentTypeSummary(this.getResponseHeader('content-type') ?? '')
+              : 'no response',
+          })
+        },
+        { once: true },
+      )
+    }
+
+    originalSend.call(this, body)
+  }
+
+  return () => {
+    proto.open = originalOpen
+    proto.send = originalSend
   }
 }
 
@@ -303,6 +418,7 @@ export function startRecording(label: string): RecorderHandle {
   }
 
   const restoreFetch = installFetchRecorder()
+  const restoreXhr = installXhrRecorder()
   let stopped = false
 
   const handle: RecorderHandle = {
@@ -310,6 +426,7 @@ export function startRecording(label: string): RecorderHandle {
       if (stopped) return
       stopped = true
       restoreFetch()
+      restoreXhr()
       stopRrweb()
       active = null
     },
