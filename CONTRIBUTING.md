@@ -4,15 +4,23 @@ Thanks for looking. Traces started as a hackathon project, so the codebase is sm
 conventions are few — but the few there are exist for reasons, and this document is where they're
 written down.
 
+Two neighbours to this file: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) covers participation, including
+the one project-specific clause about publishing recordings of real people, and
+[SECURITY.md](SECURITY.md) is where a vulnerability goes instead of into a public issue.
+
 ---
 
 ## Getting set up
 
 ```bash
-git clone <this repo>
-cd traces && npm install && npm run dev      # the app          → localhost:3000
-cd bugbait && npm install && npm run dev    # the broken demo  → localhost:3001
+git clone https://github.com/ribdsp/Traces.git
+cd Traces
+
+cd traces && npm install && npm run dev        # the app          → localhost:3000
+cd ../bugbait && npm install && npm run dev    # the broken demo  → localhost:3001
 ```
+
+Two terminals: both dev servers run at once, and the app is not much use without a recording to load.
 
 To exercise the tool surface you need WebMCP available in the browser. Three options, in descending
 order of fidelity:

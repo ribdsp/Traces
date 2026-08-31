@@ -5,7 +5,7 @@
 **A session replay engine that an AI agent can interrogate — through WebMCP.**
 
 [![Live demo](https://img.shields.io/badge/demo-traces.ribdsp.com-111827?style=flat-square)](https://traces.ribdsp.com)
-[![Video](https://img.shields.io/badge/video-under_3_min-b91c1c?style=flat-square)](https://youtu.be/KyME2kG7_PI)
+[![Video](https://img.shields.io/badge/Video-watch-b91c1c?style=flat-square)](https://youtu.be/KyME2kG7_PI)
 [![WebMCP tools](https://img.shields.io/badge/WebMCP-17_tools-374151?style=flat-square)](docs/tools.md)
 [![Tests](https://img.shields.io/badge/tests-309_passing-374151?style=flat-square)](CONTRIBUTING.md)
 [![Licence](https://img.shields.io/badge/licence-MIT-374151?style=flat-square)](LICENSE)
@@ -22,6 +22,7 @@ Built for [The WebMCP Challenge](https://webmcp.devpost.com/).
 
 - **Live demo:** [traces.ribdsp.com](https://traces.ribdsp.com)
 - **Video:** [youtu.be/KyME2kG7_PI](https://youtu.be/KyME2kG7_PI)
+- **Submission:** [devpost.com/software/traces-3snwtz](https://devpost.com/software/traces-3snwtz)
 - **Tool reference:** [docs/tools.md](docs/tools.md)
 - **Architecture:** [docs/architecture.md](docs/architecture.md) · **Threat model:** [docs/threat-model.md](docs/threat-model.md)
 
@@ -305,10 +306,11 @@ Traces is one workspace with two participants, and it's built so you can always 
 Requires Node 20+.
 
 ```bash
-git clone <this repo> && cd Traces
+git clone https://github.com/ribdsp/Traces.git
+cd Traces
 
-cd traces && npm install && npm run dev      # the app          → http://localhost:3000
-cd ../bugbait && npm install && npm run dev # the broken demo  → http://localhost:3001
+cd traces && npm install && npm run dev        # the app          → http://localhost:3000
+cd ../bugbait && npm install && npm run dev    # the broken demo  → http://localhost:3001
 ```
 
 Open `localhost:3000`, pick one of the three bundled recordings, and connect an agent.
@@ -449,7 +451,8 @@ nothing leaves the page that wasn't asked for.**
 - **Every committed recording is synthetic.**
 
 Full analysis, including what is deliberately **out of scope**:
-**[docs/threat-model.md](docs/threat-model.md)**.
+**[docs/threat-model.md](docs/threat-model.md)**. To report something rather than read about it:
+**[SECURITY.md](SECURITY.md)** — privately, please, not in a public issue.
 
 ---
 
@@ -511,6 +514,12 @@ mobile-native sessions.
 See [CONTRIBUTING.md](CONTRIBUTING.md). Three rules matter more than the rest: **nothing from the
 model is ever executed**, **every tool response has a budget**, and **no real user recordings in this
 repository**.
+
+Bugs and tool proposals both have [issue templates](https://github.com/ribdsp/Traces/issues/new/choose)
+— the questions in them are the ones that make a report actionable, particularly *which WebMCP mode*
+you were in. Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md), which has one
+project-specific clause: publishing a recording of a real person's session is treated as publishing
+their private information.
 
 ## Licence
 
