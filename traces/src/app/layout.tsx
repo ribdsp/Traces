@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: 'Traces — agent-interrogable session replay',
   description:
     'A session replay player an AI agent can interrogate through WebMCP: bisect the timeline, read the DOM at any moment, and file a verifiable bug report.',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 /**
