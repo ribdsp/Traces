@@ -232,8 +232,8 @@ The checklist, in order:
 MIT. By contributing you agree your contribution is licensed on the same terms.
 
 You keep copyright over your own work — there is no CLA and no copyright assignment. The notice in
-[LICENSE](LICENSE) reads *"Riko, Vicko, Faiq and the Traces contributors"* precisely so that it stays
-accurate as people join, without anyone having to remember to edit it.
+[LICENSE](LICENSE) reads *"the Traces contributors"* precisely so that it stays accurate as people
+join, without anyone having to remember to edit it.
 
 Git history is the authoritative record of who contributed what. We don't keep a separate `AUTHORS`
 file, because those go stale and then quietly undercredit exactly the people they were meant to

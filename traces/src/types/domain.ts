@@ -1,12 +1,12 @@
 /**
  * The frozen interface contract.
  *
- * Everything in this file was agreed on Day 1 and is what lets three people work in parallel:
+ * Everything in this file was agreed on Day 1 and is what lets several people work in parallel:
  * `lib/` produces these shapes, `lib/webmcp/` serialises them, `components/` renders them. Nobody
  * has to read anybody else's implementation.
  *
- * Owner: Riko. If you need a new type, ask in the group rather than editing — this is the one file
- * all three of us touch, so it's the one file where a silent change costs someone an afternoon.
+ * If you need a new type, raise it rather than editing — this is the one file every area touches,
+ * so it's the one file where a silent change costs someone an afternoon.
  *
  * Every JSON key here is camelCase, because these shapes go out over the wire to a model verbatim.
  */
@@ -337,7 +337,7 @@ export type Gate<T> = {
 // ---------------------------------------------------------------------------
 
 /**
- * The single state store. Owner: Vicko.
+ * The single state store.
  *
  * Read by components, written only through actions, and every action carries `author`.
  * Actions return new objects — per-contribution undo needs the previous state intact.

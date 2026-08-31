@@ -15,7 +15,7 @@ function buildFormFixture(): Element {
       <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-lg font-semibold tracking-tight">Shipping address</h2>
         <form id="checkout">
-          <input name="fullName" type="text" value="Riko" placeholder="Full name" />
+          <input name="fullName" type="text" value="Sample Name" placeholder="Full name" />
           <input name="email" type="email" value="" aria-invalid="true" />
           <select name="province"></select>
           <select name="city"><option>Bandung</option><option>Bogor</option></select>
