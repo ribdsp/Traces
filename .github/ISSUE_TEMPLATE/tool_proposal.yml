@@ -1,0 +1,85 @@
+name: Tool proposal
+description: Propose an 18th WebMCP tool, or a change to one of the 17.
+labels: [tool proposal]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The tool surface is the interface a model reads, so it is designed rather than accumulated. The
+        questions below are the ones a proposal has to answer — they map onto
+        [CONTRIBUTING.md § Adding a tool](https://github.com/ribdsp/Traces/blob/main/CONTRIBUTING.md#adding-a-tool), and the second
+        one is the one that decides most proposals.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What the tool does
+      description: One paragraph. Include the name you'd give it and the shape of what it returns.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-the-page
+    attributes:
+      label: Why the page must compute this, rather than a server
+      description: >
+        The point of WebMCP here is that the answer lives in live browser state — a replayed DOM,
+        computed styles, layout boxes, a binary search that has to re-render the page 17 times. If the
+        same answer could come from an API call over the recording JSON, it does not need to be a tool.
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt
+    attributes:
+      label: The prompt an agent would be answering
+      description: >
+        Written the way a user would phrase it, not the way the tool would. A tool that only works when
+        the caller already knows the right arguments is a tool a model will not reach for.
+      placeholder: "Why is the Pay button still disabled at the end of the recording?"
+    validations:
+      required: true
+
+  - type: input
+    id: budget
+    attributes:
+      label: Proposed response budget
+      description: >
+        Every response has one — lines, characters, entries, or matches — plus a `truncated` flag and a
+        sentence telling the agent what to do about it. Say which.
+      placeholder: 20 entries, truncated → "narrow the time range"
+    validations:
+      required: true
+
+  - type: textarea
+    id: failure-modes
+    attributes:
+      label: How it fails readably
+      description: >
+        Every rejection path returns a sentence an agent can correct itself from, not a thrown
+        exception. List the rejections you can foresee and what each one would say.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundaries
+      description: >
+        These come from the [threat model](https://github.com/ribdsp/Traces/blob/main/docs/threat-model.md). A proposal that needs one
+        of them relaxed is a discussion about the threat model first, and a tool second.
+      options:
+        - label: Nothing the model supplies would be executed — no `eval`, no `new Function`, no compiled regex, no interpolated expression.
+          required: true
+        - label: It reads recorded state only. It does not need a real user's session.
+          required: true
+        - label: It does not return input values or request/response bodies. The recorder never captures those.
+          required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried with the existing 17
+      description: >
+        Which of the current tools you composed, and where the composition fell short. See
+        [docs/tools.md](https://github.com/ribdsp/Traces/blob/main/docs/tools.md).

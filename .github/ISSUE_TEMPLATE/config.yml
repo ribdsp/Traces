@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ribdsp/Traces/security/advisories/new
+    about: Report privately. Please don't open a public issue for a security problem.
+  - name: The 17-tool contract
+    url: https://github.com/ribdsp/Traces/blob/main/docs/tools.md
+    about: Every tool's arguments, response shape, budget and failure modes. Read this before proposing an 18th.
+  - name: Architecture and threat model
+    url: https://github.com/ribdsp/Traces/blob/main/docs/architecture.md
+    about: How the pieces fit, and which boundaries are deliberate.
+  - name: The WebMCP specification
+    url: https://github.com/webmachinelearning/webmcp
+    about: Questions about WebMCP itself — including the missing "image" content type — belong upstream.
+  - name: The submission this was built for
+    url: https://devpost.com/software/traces-3snwtz
+    about: Traces was built for The WebMCP Challenge. Context, video, and the write-up live here.

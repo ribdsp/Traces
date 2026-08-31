@@ -1,0 +1,104 @@
+name: Bug report
+description: Something in Traces behaves incorrectly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two things make a Traces bug report actionable, and neither is obvious:
+
+        **Which WebMCP mode you were in.** The polyfill, the origin trial and the `webmcp-tools`
+        inspector are three different execution paths, and a bug in one often does not exist in the
+        others. The header pill in the app tells you: `live` means real WebMCP, `polyfill` means the
+        17 tools are not registered with a host.
+
+        **Which recording.** Every recording is synthetic and reproducible, so naming it makes the bug
+        reproducible too. If it only happens on a recording you made yourself, **describe it — do not
+        attach it.** A recording is a full reconstruction of a page and everything that was on it; see
+        [CODE_OF_CONDUCT.md](https://github.com/ribdsp/Traces/blob/main/CODE_OF_CONDUCT.md).
+
+        Found a security problem instead? Don't file it here — see
+        [SECURITY.md](https://github.com/ribdsp/Traces/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - A WebMCP tool
+        - The replay player / timeline
+        - The findings panel (markers, hypotheses, tasks, report)
+        - The activity feed or undo
+        - bugbait (the demo checkout app)
+        - Build, install, or typecheck
+        - Somewhere else
+    validations:
+      required: true
+
+  - type: input
+    id: tool-name
+    attributes:
+      label: Tool name and arguments
+      description: If a tool was involved, name it and paste the arguments verbatim.
+      placeholder: 'bisect_state — { selector: "select[name=province]", predicate: { kind: "optionCount", equals: 0 } }'
+
+  - type: dropdown
+    id: webmcp-mode
+    attributes:
+      label: WebMCP mode
+      description: The header pill in the app says which one.
+      options:
+        - live — Chrome/Edge origin trial
+        - polyfill — the development fallback
+        - webmcp-tools browser extension
+        - Not applicable — the bug is in the UI
+    validations:
+      required: true
+
+  - type: input
+    id: agent-client
+    attributes:
+      label: Agent client
+      description: Which agent called the tool, if one did. "By hand from the inspector" is a valid answer.
+      placeholder: ChatGPT Desktop 1.2026.x / by hand from the inspector
+
+  - type: input
+    id: recording
+    attributes:
+      label: Recording
+      description: The slug from the picker, plus the timestamp in ms if the bug is at a particular moment.
+      placeholder: empty-province, around 28000ms
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 149 / Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Errors from the devtools console, if there were any.
+      render: text
