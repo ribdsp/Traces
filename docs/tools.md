@@ -1,6 +1,6 @@
 # Tool reference
 
-Traces registers **16 WebMCP tools** on `document.modelContext`. This document is the contract: what
+Traces registers **17 WebMCP tools** on `document.modelContext`. This document is the contract: what
 each tool takes, what it returns, and the rules an agent needs to know to use it correctly.
 
 Every tool returns `{ content: [{ type: "text", text: ... }] }`. The WebMCP spec currently defines
@@ -39,6 +39,7 @@ bending the type, and those additions are listed per tool.
 | 14 | `propose_report` | **blocking** | a bug report draft the human edits and approves |
 | 15 | `claim_next_task` | **blocking** | pull the next task from the agent lane |
 | 16 | `snapshot_finding` | write | save markers, hypotheses and the report draft |
+| 17 | `read_markers` | read | every marker in a window, the human's included, rejections flagged |
 
 **Blocking** means exactly what it says: `execute()` does not resolve until a person acts, or until
 the gate's timeout hands back a ticket. The agent's own loop waits. See
@@ -48,7 +49,7 @@ the gate's timeout hands back a ticket. The agent's own loop waits. See
 
 ## Conventions every tool follows
 
-Stated once here rather than repeated sixteen times.
+Stated once here rather than repeated seventeen times.
 
 - **Times are milliseconds from the start of the recording**, `0..durationMs`, never epoch. Call
   `read_session_meta` first to learn `durationMs`.
@@ -700,6 +701,50 @@ hypotheses and 40 report steps, and a 200,000-character ceiling on the serialise
 rejection path is a readable error — storage blocked by a privacy setting, quota refused, or nothing
 saved yet because there are no markers, no hypotheses and no draft. In the first two cases the
 findings are still on screen and the message says to copy them out of the panel.
+
+---
+
+## Reading the investigation
+
+### 17. `read_markers({ from?, to? })`
+
+```
+input:  { from?: number, to?: number }
+output: { fromMs, toMs,
+          markers: [{ id, atMs, label, severity, author, rejected? }],
+          totalMatched, humanCount, agentCount, truncated, note? }
+```
+
+The read half of `annotate` (§11), and it is numbered last because it was built last, not because it
+is a saving tool — every other read tool answers a question about the *recording*, this one answers a
+question about the *investigation*.
+
+**It returns the human's markers as well as the agent's**, which is the reason it exists.
+`ask_human_visual` (§12) lands the human's answer on the timeline as a marker precisely so it is
+evidence anyone can click; without this tool "anyone" excluded the agent, which could write markers
+and never read one back. A session resumed after a reload, or picked up by a second agent, started
+blind to the moments a person had already pointed at.
+
+`author` is the frozen `Author` — `"human"` or `"agent"` — and `humanCount`/`agentCount` are counted
+over everything the window matched, not over what survived the cap.
+
+**A rejected marker comes back flagged, not filtered.** `rejected: true` means the human dismissed
+it; the field is *absent* rather than `false` on a marker that stands, so it is not noise on every
+entry. Filtering them out would leave an agent free to re-propose exactly what a person has already
+thrown away.
+
+- Capped at 40 markers, the **human's kept ahead of the agent's** when the cap bites, then
+  chronological order restored. The agent already holds the ids of everything it pinned itself, from
+  `annotate`'s replies, so its own are the ones it can most afford to lose. `annotate` caps the agent
+  at 40 markers on one timeline, so the total can exceed 40 only once a human has marked as well.
+- Returned in timeline order, not the order the markers were made in. Markers are added at any
+  timestamp at any time, and a timeline is read as a sequence.
+- `label` is capped at 80 characters, the same ceiling `annotate` and `ask_human_visual` enforce when
+  writing.
+- An empty result carries a note saying so in words. "No markers in this window" and an empty list
+  are the same fact, but only one of them survives being skimmed.
+- **A loaded recording is required**, like every other read tool. A marker is a timestamp into a
+  recording, and answering "no markers" with nothing loaded would read as "the human marked nothing".
 
 ---
 

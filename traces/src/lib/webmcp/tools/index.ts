@@ -8,6 +8,7 @@ import { bisectTool } from './bisect'
 import { diffDomToolDefinition } from './diff-dom'
 import { readConsoleTool } from './read-console'
 import { readNetworkTool } from './read-network'
+import { readMarkersTool } from './read-markers'
 import { measureLayoutToolDefinition } from './measure-layout'
 import { seekTool } from './seek'
 import { annotateTool } from './annotate'
@@ -41,6 +42,10 @@ export const allTools: ToolDefinition[] = [
   readDomAtTool,
   readConsoleTool,
   readNetworkTool,
+  // Last of the read group, not first: it is the only one that answers a question about the
+  // investigation rather than about the recording, and a model scanning for "read the page" must not
+  // land on it.
+  readMarkersTool,
 
   // search
   bisectTool,
@@ -80,6 +85,7 @@ export {
   diffDomToolDefinition,
   readConsoleTool,
   readNetworkTool,
+  readMarkersTool,
   measureLayoutToolDefinition,
   seekTool,
   annotateTool,

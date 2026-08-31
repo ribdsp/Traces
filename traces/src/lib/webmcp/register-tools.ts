@@ -30,7 +30,7 @@ export type RegistrationResult = {
  *
  * Async because `registerTool` returns a promise and every failure the spec defines arrives as a
  * rejection — not a thrown exception. A synchronous `try`/`catch` here caught nothing, so a page whose
- * agent cluster is not origin-keyed reported sixteen live tools while registering zero. That is the
+ * agent cluster is not origin-keyed reported seventeen live tools while registering zero. That is the
  * failure next.config.mjs calls "the worst available failure", and this is the only place that can see
  * it.
  */
@@ -58,13 +58,13 @@ export async function registerTools(): Promise<RegistrationResult> {
   controller = surface
 
   /*
-   * Concurrently, and `allSettled` rather than `all`: sixteen sequential awaits is sixteen round trips
-   * through the host for no reason, and one host rejecting one schema must not cost us the other
-   * fifteen. A surface that is fifteen-sixteenths present is worth having, and the banner shows what
+   * Concurrently, and `allSettled` rather than `all`: seventeen sequential awaits is seventeen round
+   * trips through the host for no reason, and one host rejecting one schema must not cost us the other
+   * sixteen. A surface that is sixteen-seventeenths present is worth having, and the banner shows what
    * actually registered rather than what we hoped would.
    *
    * `async` on the mapper is not decoration: a host that throws synchronously instead of rejecting
-   * would otherwise escape `allSettled` through `map` and cost all sixteen.
+   * would otherwise escape `allSettled` through `map` and cost all seventeen.
    */
   const outcomes = await Promise.allSettled(
     allTools.map(async (tool) =>

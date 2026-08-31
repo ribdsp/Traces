@@ -7,7 +7,7 @@ before your first edit, then `CONTRIBUTING.md`.
 
 1. **`CONTRIBUTING.md`** — the three non-negotiable rules, code conventions, testing policy
 2. **`docs/architecture.md`** — how the pieces fit, including the module-level engine handle
-3. **`docs/tools.md`** — the 16-tool contract
+3. **`docs/tools.md`** — the 17-tool contract
 4. **`docs/agent-legible-dom.md`** — only if you touch `lib/dom`
 
 ## One area per change
@@ -28,7 +28,7 @@ than none. Whoever asked you to make this change will tell you your scope.
 
 One stub is left, and it still carries its marker. `registerDynamicTool` in
 `traces/src/lib/webmcp/register-tools.ts:133` throws `registerDynamicTool: not implemented`, and nothing
-in the codebase calls it — so promoting a hypothesis does not grow a 17th tool. The convention is
+in the codebase calls it — so promoting a hypothesis does not grow an 18th tool. The convention is
 documented here because the rule outlives the markers: a marker names the person who owned the work and
 the day it was due, so **deleting one while implementing around it destroys the only record of who owes
 what.** If you add a marker, name yourself in it. If you find one, either implement it or leave it
@@ -36,7 +36,7 @@ exactly where it is.
 
 ## The tests are green, and two suites must stay honest
 
-All 303 tests pass. That is worth stating because of how some of them got there: the `compress-dom`,
+All 309 tests pass. That is worth stating because of how some of them got there: the `compress-dom`,
 `bisect` and `evaluatePredicate` suites were written first, as specifications, and were red for as long
 as it took the implementations to satisfy them. **Never** make a test in those suites pass by weakening
 an assertion, adding `.skip`, or deleting a case: that converts a specification into a lie, silently. A

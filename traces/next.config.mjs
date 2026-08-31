@@ -38,7 +38,7 @@ const nextConfig = {
      * Origin isolation is not optional, and it is not part of the trial: WebMCP refuses to register a
      * tool unless the document is origin-isolated, so this header ships whether or not a token is
      * configured. Sending only `Origin-Trial` produces the worst available failure — `document
-     * .modelContext` exists, so the banner reports `native` in green, while all sixteen
+     * .modelContext` exists, so the banner reports `native` in green, while all seventeen
      * `registerTool` calls throw and `registerTools` returns an empty array. The page looks healthy
      * and nothing on it is agent-callable.
      *

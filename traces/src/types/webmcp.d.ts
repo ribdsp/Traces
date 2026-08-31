@@ -92,8 +92,8 @@ interface ModelContext extends EventTarget {
    * `NotAllowedError` when the `tools` permission policy forbids it, plus a duplicate name, an empty
    * name or description, and an invalid `inputSchema`.
    *
-   * Typed as a promise rather than `void` because that is the difference between reporting sixteen
-   * live tools and reporting sixteen that a `try`/`catch` never saw fail.
+   * Typed as a promise rather than `void` because that is the difference between reporting seventeen
+   * live tools and reporting seventeen that a `try`/`catch` never saw fail.
    */
   registerTool: (
     descriptor: ModelContextToolDescriptor,

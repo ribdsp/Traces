@@ -31,7 +31,7 @@ export function ToolSurface() {
      * `registerTools` is async because the spec's `registerTool` rejects rather than throws. The flag
      * is what keeps React 19's double mount honest: the first pass is aborted on cleanup and resolves
      * with nothing registered, and without this guard that empty result can land after the second
-     * pass's real one and grey out a banner over sixteen live tools.
+     * pass's real one and grey out a banner over seventeen live tools.
      */
     let active = true
 

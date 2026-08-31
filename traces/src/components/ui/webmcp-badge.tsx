@@ -18,7 +18,7 @@ import type { RegistrationResult } from '@/lib/webmcp/register-tools'
  *
  *   - **The tool list comes from the host, not from us.** `document.modelContext.getTools()` reports what
  *     the browser actually holds, so a tool the host rejected cannot appear here. Reading our own
- *     `allTools` array instead would render sixteen confident cards on a page where zero are callable.
+ *     `allTools` array instead would render seventeen confident cards on a page where zero are callable.
  *   - **The panel is a dropdown, not a dock.** Opening it from the header means it can be dismissed, so
  *     the old rule that a red panel had no close button does not apply: the thing that must not be
  *     hideable is the banner row, and that row is still in flow with no close control.
@@ -169,7 +169,7 @@ export function WebMcpPanel({ registration }: { registration: RegistrationResult
                 <p className="truncate font-mono text-label leading-none text-ink">{tool.name}</p>
                 {/*
                   Two lines, hard. `firstSentence` is already the short form and it is still six lines
-                  wide for `read_session_meta` in a 145px column, which turns sixteen cards into a wall
+                  wide for `read_session_meta` in a 145px column, which turns seventeen cards into a wall
                   of prose nobody reads. The clamp is what makes this a scannable index; `title` on the
                   card keeps the sentence available to anyone who wants it.
                 */}
@@ -187,7 +187,7 @@ export function WebMcpPanel({ registration }: { registration: RegistrationResult
  * Whether tools are available, in one sentence, per state.
  *
  * `polyfill` says the quiet part out loud: the count is real and the tools work from this page, but no
- * external agent can see any of them. A judge reading "16 tools" beside an amber dot deserves to know
+ * external agent can see any of them. A judge reading "17 tools" beside an amber dot deserves to know
  * which of those two facts they are looking at.
  */
 function StatusSentence({ health, count }: { health: Health; count: number }) {

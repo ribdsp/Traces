@@ -40,7 +40,7 @@ That's the gap Traces fills.
 
 ## What it does
 
-Traces loads an rrweb recording in the browser and registers **16 WebMCP tools** on
+Traces loads an rrweb recording in the browser and registers **17 WebMCP tools** on
 `document.modelContext`. An agent connected to the page can then read the session, search across
 time, take actions on the timeline, and — this is the part we care most about — **ask the human
 questions**.
@@ -184,7 +184,7 @@ the design better.
 
 ---
 
-## The 16 tools
+## The 17 tools
 
 Full contracts, argument shapes, and edge-case behaviour in **[docs/tools.md](docs/tools.md)**.
 
@@ -206,6 +206,7 @@ Full contracts, argument shapes, and edge-case behaviour in **[docs/tools.md](do
 | 14 | `propose_report` | blocking | a bug report draft the human edits and approves |
 | 15 | `claim_next_task` | blocking | pull the next task from the agent lane |
 | 16 | `snapshot_finding` | write | save a finding |
+| 17 | `read_markers` | read | every marker on the timeline, the human's included |
 
 Four of them **block**: `execute()` does not resolve until a person acts. Because a call can't hang
 forever, each one returns `{ status: "pending", ticket }` on timeout instead of leaving the agent
@@ -374,7 +375,7 @@ goes nowhere; there is no upload endpoint to send it to.
 Traces/
 ├── docs/
 │   ├── architecture.md          how it's put together, and why
-│   ├── tools.md                 the 16-tool contract
+│   ├── tools.md                 the 17-tool contract
 │   ├── agent-legible-dom.md     the DOM compressor spec
 │   └── threat-model.md          what we defend against
 ├── traces/                       the app — this is the deployed URL
