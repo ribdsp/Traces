@@ -327,7 +327,7 @@ options do the actual work, and `bugbait/src/lib/record.ts` is the reference imp
 |---|---|
 | `checkoutEveryNms: 5000` | rrweb emits **one** full snapshot, at the start. The checkpoint index has a single entry, so every seek replays from the beginning — and `bisect`, which seeks repeatedly by design, pays that cost on each step. Nothing errors; the player just crawls |
 | `maskAllInputs: true` | every keystroke is recorded verbatim. See below — this one is not a preference |
-| a `window.fetch` patch emitting `addCustomEvent('network-request', …)` | `read_network` returns nothing. rrweb records DOM mutations, not requests; the network panel of a recording is whatever you put there yourself |
+| a `window.fetch` patch **and** an `XMLHttpRequest.prototype` patch, both emitting `addCustomEvent('network-request', …)` | `read_network` returns nothing. rrweb records DOM mutations, not requests; the network panel of a recording is whatever you put there yourself. Patching one transport and not the other is the worse version of this: a timeline that is empty for exactly the requests you missed, which reads as "the page made none" |
 | normalising console events to `{ type: 3, source: 11 }` | the console plugin emits `{ type: 6, data: { plugin: 'rrweb/console@1' } }`, which nothing downstream reads. `consoleErrors` stays `0` on a session full of errors — the most misleading of the five, because zero looks like an answer |
 | stamping `userAgent` onto the first Meta event | the session summary cannot say what browser it was |
 
@@ -337,10 +337,20 @@ in the JSON, in plain text, for anyone the file is later shared with. Traces tru
 characters when a tool reads one, which limits what an agent sees and does nothing about what the file
 contains. Mask at the recorder or accept that the recording is a secret.
 
-**A gap worth knowing before you trust `read_network`:** a `fetch` patch sees `fetch` only.
-`XMLHttpRequest` traffic — anything on axios's default adapter, jQuery, or an older SDK — is invisible
-to it, and a recording of such an app will show an empty network timeline rather than an error. Every
-fixture here uses `fetch`, so none of them expose this.
+**What `read_network` can and cannot see.** Both transports are patched, so an app on axios's default
+adapter, jQuery or an older SDK reports through the same `network-request` event as a `fetch` call and an
+agent never has to know which was used. Still invisible: `navigator.sendBeacon`, WebSockets and
+`EventSource`. Every fixture here predates the XHR patch and uses `fetch` only, so none of them exercise
+it — `bugbait/src/lib/record.test.ts` is what covers that path.
+
+**Neither patch records a request body, and neither records a response body's contents.** A request body
+is passed through to `fetch` or to `send` uninspected. On the way back, the `fetch` patch reads a response
+only when it declares itself JSON, and records its *shape* — `array, 0 items`, `object, keys: …` — which
+is the whole clue for the empty-province bug and none of the values. The XHR patch reads nothing at all:
+`bodySummary` there is derived from the `Content-Type` header, so the field is present and true without a
+byte of payload entering the file. Same reasoning as `maskAllInputs` one paragraph up, applied to the
+other direction — a checkout's request body carries the address and the card number, and a recording is a
+file that gets shared.
 
 **The cost, measured** from the three files in `traces/public/recordings/`: 184–213 KiB for ~45 seconds
 of a small checkout page, or roughly 4–5 KiB per second, at 209–223 events. A recording is JSON and

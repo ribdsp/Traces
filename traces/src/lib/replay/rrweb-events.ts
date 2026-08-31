@@ -29,7 +29,8 @@ const MOUSE_INTERACTION_CLICK = 2
  * The custom-event tag the recorder uses for a network request.
  *
  * rrweb has no built-in network capture, so this is this project's own convention, not something rrweb
- * defines. `bugbait/src/lib/record.ts` monkey-patches `window.fetch` and emits
+ * defines. `bugbait/src/lib/record.ts` monkey-patches both `window.fetch` and
+ * `XMLHttpRequest.prototype` and emits
  * `record.addCustomEvent('network-request', { url, method, status, ok, durationMs, bodySummary })` for
  * every request, successful ones included — rrweb wraps that into `{ tag, payload }` under a type-5
  * event, which is the shape `isNetworkFailureEvent` below matches. Both ends are implemented and the
