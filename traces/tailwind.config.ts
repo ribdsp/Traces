@@ -57,10 +57,19 @@ const config: Config = {
           strong: '#343b45',
         },
 
-        // Text.
+        // Text. `faint` is pinned by contrast rather than by taste: it is used on eleven different
+        // grounds, and at this value it clears WCAG AA (4.5:1) on all of them. `raised` is the binding
+        // one, being the lightest, at 4.51:1 — anything dimmer fails there. The 3:1 large-text
+        // allowance is no help, because `fontSize` below tops out at 15px and nothing here is bold.
+        // The cost is that it now sits 11 per channel from `muted` instead of 48, so the two read as
+        // one tone in places; that is the most separation the pair can have with both passing.
+        //
+        // One site is still short of AA, and no value here can fix it: the rejected hypothesis card in
+        // `hypothesis-cards.tsx` carries `opacity-60`, which veils text and ground together, so no
+        // foreground can outrun it — 2.61:1 for `faint`, and 2.90:1 for `muted` in the same card.
         ink: '#e6e8eb',
         muted: '#8b929c',
-        faint: '#5b626c',
+        faint: '#808791',
 
         // Authorship. These two carry meaning, not decoration: every marker, hypothesis and
         // activity entry is tinted by who created it. Do not reuse them for anything else.
