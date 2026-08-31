@@ -15,7 +15,7 @@ Traces/
 ├── CONTRIBUTING.md
 ├── docs/
 │   ├── architecture.md          this file
-│   ├── tools.md                 the 16-tool contract
+│   ├── tools.md                 the 17-tool contract
 │   ├── agent-legible-dom.md     the DOM compressor spec
 │   └── threat-model.md
 ├── traces/                   the app itself — the deployed URL
@@ -84,7 +84,7 @@ traces/
     │   │   ├── register-tools.ts        every registerTool call, one place
     │   │   ├── blocking.ts              the human-in-the-loop gate
     │   │   ├── polyfill.ts
-    │   │   └── tools/                   one file per tool, 16 of them, plus index.ts and registry.test.ts
+    │   │   └── tools/                   one file per tool, 17 of them, plus index.ts and registry.test.ts
     │   ├── store/session.ts             single state store
     │   └── report/build-report.ts       reconstructs steps from real events
     └── types/

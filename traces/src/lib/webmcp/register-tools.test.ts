@@ -9,8 +9,8 @@ import { registerTools, unregisterTools } from './register-tools'
  * These exist because of a specific bug rather than for coverage. `registerTool` returns a promise and
  * every failure the spec defines — `InvalidStateError`, `SecurityError` for an agent cluster that is not
  * origin-keyed, `NotAllowedError`, a duplicate name, a bad schema — arrives as a *rejection*. The old
- * implementation wrapped the call in a synchronous `try`/`catch`, which caught none of them: all sixteen
- * names went into `registered` unconditionally and the banner read "WebMCP live · 16 tools" over an empty
+ * implementation wrapped the call in a synchronous `try`/`catch`, which caught none of them: all seventeen
+ * names went into `registered` unconditionally and the banner read "WebMCP live · 17 tools" over an empty
  * tool list. A green banner on a dead surface is the one failure this project cannot afford, so the
  * assertion below is about the *absence* of names, not the presence of them.
  *
@@ -76,7 +76,7 @@ describe('registerTools', () => {
 
   it('reports nothing registered when the host refuses everything', async () => {
     // The failure next.config.mjs calls "the worst available failure": an origin that is not
-    // origin-keyed refuses every tool, and the banner used to call that sixteen live tools.
+    // origin-keyed refuses every tool, and the banner used to call that seventeen live tools.
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     document.modelContext = stubModelContext({
       names: allTools.map((tool) => tool.name),

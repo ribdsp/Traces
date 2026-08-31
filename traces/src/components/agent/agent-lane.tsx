@@ -17,7 +17,7 @@ import type { Task, TaskStatus } from '@/types/domain'
  * A human types a task; the agent picks it up by calling `claim_next_task`, which blocks until one
  * exists. That inversion is the interesting part — the agent waits on the person rather than the
  * person waiting on the agent — and it means the lane is not a UI convenience, it is the queue that
- * one of the sixteen tools reads from.
+ * one of the seventeen tools reads from.
  *
  * Show `claimed` distinctly from `open`. Watching a task flip to claimed a second after you typed it,
  * with no click in between, is the clearest demonstration in the whole app that something else is

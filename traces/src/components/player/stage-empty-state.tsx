@@ -175,7 +175,7 @@ export function StageEmptyState() {
           Getting WebMCP
         </h3>
         <p className="mt-1 text-meta leading-relaxed text-muted">
-          WebMCP is how an agent finds the sixteen tools on this page. Turn it on in ChatGPT Desktop or
+          WebMCP is how an agent finds the seventeen tools on this page. Turn it on in ChatGPT Desktop or
           Chrome, then the header pill should read live. Replay still works without it — only the agent
           needs the tools.
         </p>

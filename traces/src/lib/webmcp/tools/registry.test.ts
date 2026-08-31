@@ -8,17 +8,17 @@ import { allTools, assertUniqueToolNames } from './index'
  * shadows another because a name got copy-pasted, a schema with no field descriptions, a description
  * that still reads like a TODO. None of it needs a browser, so it can run on every commit.
  *
- * All 16 tools are implemented and every assertion below is green. That is the state to keep: these
- * ran as a checklist while the tools were being filled in, and they read now as the standing rules a
- * seventeenth tool has to meet before it joins `allTools`.
+ * All 17 tools are implemented and every assertion below is green. That is the state to keep: these
+ * ran as a checklist while the tools were being filled in, and they read now as the standing rules an
+ * eighteenth tool has to meet before it joins `allTools`.
  */
 describe('tool registry', () => {
   it('has no duplicate names', () => {
     expect(() => assertUniqueToolNames()).not.toThrow()
   })
 
-  it('exposes the 16 tools documented in docs/tools.md', () => {
-    expect(allTools).toHaveLength(16)
+  it('exposes the 17 tools documented in docs/tools.md', () => {
+    expect(allTools).toHaveLength(17)
   })
 
   it('uses snake_case names, which is what the spec examples use', () => {

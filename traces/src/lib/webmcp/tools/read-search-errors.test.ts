@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { Recording, RrwebEvent } from '@/types/domain'
+import type { Author, Recording, RrwebEvent, Severity } from '@/types/domain'
 import { useSessionStore } from '@/lib/store/session'
 import { bisectTool } from './bisect'
 import { diffDomToolDefinition } from './diff-dom'
@@ -8,12 +8,13 @@ import { listEventsTool } from './list-events'
 import { measureLayoutToolDefinition } from './measure-layout'
 import { readConsoleTool } from './read-console'
 import { readDomAtTool } from './read-dom-at'
+import { readMarkersTool } from './read-markers'
 import { readNetworkTool } from './read-network'
 import { readSessionMetaTool } from './read-session-meta'
 import type { ToolDefinition, ToolResponse } from '../tool-types'
 
 /**
- * Rejection paths for the nine read/search wrappers.
+ * Rejection paths for the ten read/search wrappers.
  *
  * These test the wrappers' own logic and nothing else: argument validation, the "not ready" and "no
  * recording" replies, and the two places where a wrapper reads data the digest does not expose. The
@@ -33,6 +34,7 @@ const READ_AND_SEARCH_TOOLS: ToolDefinition[] = [
   readDomAtTool,
   readConsoleTool,
   readNetworkTool,
+  readMarkersTool,
   bisectTool,
   diffDomToolDefinition,
   measureLayoutToolDefinition,
@@ -46,6 +48,7 @@ const VALID_ARGS: Record<string, Record<string, unknown>> = {
   read_dom_at: { timestamp: 0 },
   read_console: {},
   read_network: {},
+  read_markers: {},
   bisect: { selector: 'button', predicate: { kind: 'exists', equals: true }, from: 0, to: 1000 },
   diff_dom: { from: 0, to: 1000 },
   measure_layout: { selectors: ['button'], timestamp: 0 },
@@ -86,6 +89,15 @@ function load(events: RrwebEvent[]): void {
   useSessionStore.getState().loadRecording(recordingWith(events), [])
 }
 
+/**
+ * A marker straight into the store, rather than through `annotate`. What is under test is what
+ * `read_markers` gives back, and `annotate` has a budget of its own that would cap the fixture before
+ * the read budget could bite.
+ */
+function mark(atMs: number, label: string, author: Author, severity: Severity = 'info'): string {
+  return useSessionStore.getState().addMarker({ timestamp: atMs, label, severity, author })
+}
+
 async function call(tool: ToolDefinition, args: Record<string, unknown> = {}): Promise<ToolResponse> {
   return tool.execute(args)
 }
@@ -120,7 +132,7 @@ describe('read and search tools before the player has mounted', () => {
   })
 
   it('still answer for the tools that only read the recording file', async () => {
-    for (const tool of [readSessionMetaTool, listEventsTool, readConsoleTool, readNetworkTool]) {
+    for (const tool of [readSessionMetaTool, listEventsTool, readConsoleTool, readNetworkTool, readMarkersTool]) {
       const response = await call(tool, {})
       expect(response.isError, tool.name).toBeUndefined()
     }
@@ -232,6 +244,99 @@ describe('read_network', () => {
     load([])
     const response = await call(readNetworkTool, {})
     expect(JSON.parse(textOf(response)).note).toMatch(/No network requests were recorded/)
+  })
+})
+
+describe('read_markers', () => {
+  type MarkersPayload = {
+    fromMs: number
+    toMs: number
+    markers: { id: string; atMs: number; label: string; severity: string; author: string; rejected?: boolean }[]
+    totalMatched: number
+    humanCount: number
+    agentCount: number
+    truncated: boolean
+    note?: string
+  }
+
+  const readMarkers = async (args: Record<string, unknown> = {}): Promise<MarkersPayload> =>
+    JSON.parse(textOf(await call(readMarkersTool, args))) as MarkersPayload
+
+  beforeEach(() => {
+    load([])
+  })
+
+  it('says nothing has been pinned rather than answering with an empty list alone', async () => {
+    const payload = await readMarkers()
+
+    expect(payload.markers).toEqual([])
+    expect(payload.totalMatched).toBe(0)
+    expect(payload.note).toMatch(/No markers in this window/)
+  })
+
+  it('returns both authors in timeline order, whatever order they were made in', async () => {
+    mark(6_000, 'agent looked here last', 'agent', 'warn')
+    mark(2_000, 'human looked here first', 'human')
+
+    const payload = await readMarkers()
+
+    expect(payload.markers.map((marker) => marker.atMs)).toEqual([2_000, 6_000])
+    expect(payload.markers.map((marker) => marker.author)).toEqual(['human', 'agent'])
+    expect(payload.markers[0]?.label).toBe('human looked here first')
+    expect(payload.markers[1]?.severity).toBe('warn')
+    expect(payload.humanCount).toBe(1)
+    expect(payload.agentCount).toBe(1)
+    expect(payload.truncated).toBe(false)
+  })
+
+  it('flags a rejected marker instead of hiding it, so it is not proposed again', async () => {
+    const id = mark(3_000, 'the human disagreed with this', 'agent', 'error')
+    useSessionStore.getState().rejectMarker(id)
+
+    const payload = await readMarkers()
+
+    expect(payload.markers).toHaveLength(1)
+    expect(payload.markers[0]?.rejected).toBe(true)
+  })
+
+  it('omits the rejected field entirely when the marker stands', async () => {
+    mark(3_000, 'still standing', 'human')
+
+    const payload = await readMarkers()
+
+    // Absent rather than `false`: `rejected: false` on every marker is noise a model has to read past.
+    expect(payload.markers[0]).not.toHaveProperty('rejected')
+  })
+
+  it('leaves out markers outside the requested window', async () => {
+    mark(500, 'before the window', 'human')
+    mark(4_000, 'inside the window', 'agent')
+    mark(9_500, 'after the window', 'human')
+
+    const payload = await readMarkers({ from: 1_000, to: 5_000 })
+
+    expect(payload.fromMs).toBe(1_000)
+    expect(payload.toMs).toBe(5_000)
+    expect(payload.markers.map((marker) => marker.label)).toEqual(['inside the window'])
+    // The count is of the window, not of the session: two markers exist that this call did not match.
+    expect(payload.totalMatched).toBe(1)
+  })
+
+  it("keeps the human's markers when the cap bites, and stays chronological", async () => {
+    for (let index = 0; index < 45; index += 1) mark(index * 100, `agent note ${index}`, 'agent')
+    mark(9_000, 'the human pinned this', 'human')
+
+    const payload = await readMarkers()
+
+    expect(payload.markers).toHaveLength(40)
+    expect(payload.totalMatched).toBe(46)
+    expect(payload.truncated).toBe(true)
+    expect(payload.note).toMatch(/the human's kept first/)
+    // It is the latest marker of the 46, so a plain chronological cap would have dropped it.
+    expect(payload.markers.some((marker) => marker.author === 'human')).toBe(true)
+    expect(payload.markers.map((marker) => marker.atMs)).toEqual(
+      [...payload.markers].sort((left, right) => left.atMs - right.atMs).map((marker) => marker.atMs),
+    )
   })
 })
 
