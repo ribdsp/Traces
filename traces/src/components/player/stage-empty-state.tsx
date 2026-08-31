@@ -1,6 +1,6 @@
 'use client'
 
-import { CirclePlay, FolderOpen, Layers, Plug } from 'lucide-react'
+import { AppWindow, CirclePlay, FolderOpen, Globe, Layers, Plug } from 'lucide-react'
 import { useRef } from 'react'
 import { reportSuccess } from '@/components/ui/error-toast'
 import { SAMPLE_RECORDINGS } from '@/components/ui/sample-recordings'
@@ -179,10 +179,15 @@ export function StageEmptyState() {
           Chrome, then the header pill should read live. Replay still works without it — only the agent
           needs the tools.
         </p>
+        {/* Generic icons on purpose. These two rows name third-party products, and their logos were
+            bundled in `public/image/` until this commit — artwork this repo has no licence to
+            redistribute, sitting in the one panel that appears in the demo video. The product names
+            stay in the text: naming a browser is not the same as shipping its mark. Do not "improve"
+            this by putting the logos back. */}
         <ul className="mt-1.5 space-y-1.5">
           <li className="rounded-sm border border-line bg-panel/60 px-2.5 py-2">
             <p className="flex items-center gap-1.5 font-medium text-ink">
-              <img src="/image/ChatGPT.webp" alt="" width={20} height={20} draggable={false} onDragStart={(event) => event.preventDefault()} className="shrink-0 brightness-0 invert" />
+              <AppWindow aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
               ChatGPT Desktop
             </p>
             <p className="mt-1 text-meta leading-relaxed text-muted">
@@ -194,7 +199,7 @@ export function StageEmptyState() {
           </li>
           <li className="rounded-sm border border-line bg-panel/60 px-2.5 py-2">
             <p className="flex items-center gap-1.5 font-medium text-ink">
-              <img src="/image/Chrome.webp" alt="" width={20} height={20} draggable={false} onDragStart={(event) => event.preventDefault()} className="shrink-0" />
+              <Globe aria-hidden size={14} strokeWidth={1.75} className="shrink-0 text-muted" />
               Chrome 149+
             </p>
             <p className="mt-1 text-meta leading-relaxed text-muted">
