@@ -136,8 +136,9 @@ export function ToolStatusBanner({ registration }: ToolStatusBannerProps) {
   }, [])
 
   /**
-   * `toolchange` is how a surface that grew a tool mid-investigation shows up here without a reload —
-   * the promoted-hypothesis tool from `registerDynamicTool` is the case worth demoing. The event fires
+   * `toolchange` is how a surface that grew a tool mid-investigation would show up here without a reload.
+   * Nothing in this app grows one: `registerDynamicTool` is a stub that throws and has no callers, so the
+   * only thing that can move this counter is the host changing its own tool list. The event fires
    * on `document.modelContext`, which is why the draft has it extend `EventTarget`. Not every host
    * honours that, and one of them is ChatGPT Desktop; `onToolChange` explains what subscribing there
    * used to cost. When the host has no events this counter simply never moves.

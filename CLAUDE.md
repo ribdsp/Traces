@@ -26,7 +26,9 @@ than none. Whoever asked you to make this change will tell you your scope.
 
 ## `TODO(name), Day n:` markers are assignments
 
-There are none left — every stub from the original build has been implemented. The convention is
+One stub is left, and it still carries its marker. `registerDynamicTool` in
+`traces/src/lib/webmcp/register-tools.ts:133` throws `registerDynamicTool: not implemented`, and nothing
+in the codebase calls it — so promoting a hypothesis does not grow a 17th tool. The convention is
 documented here because the rule outlives the markers: a marker names the person who owned the work and
 the day it was due, so **deleting one while implementing around it destroys the only record of who owes
 what.** If you add a marker, name yourself in it. If you find one, either implement it or leave it
@@ -34,7 +36,7 @@ exactly where it is.
 
 ## The tests are green, and two suites must stay honest
 
-All 285 tests pass. That is worth stating because of how some of them got there: the `compress-dom`,
+All 303 tests pass. That is worth stating because of how some of them got there: the `compress-dom`,
 `bisect` and `evaluatePredicate` suites were written first, as specifications, and were red for as long
 as it took the implementations to satisfy them. **Never** make a test in those suites pass by weakening
 an assertion, adding `.skip`, or deleting a case: that converts a specification into a lie, silently. A
