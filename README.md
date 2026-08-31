@@ -1,21 +1,29 @@
+<div align="center">
+
 # Traces
 
 **A session replay engine that an AI agent can interrogate — through WebMCP.**
+
+[![Live demo](https://img.shields.io/badge/demo-traces.ribdsp.com-111827?style=flat-square)](https://traces.ribdsp.com)
+[![Video](https://img.shields.io/badge/video-under_3_min-b91c1c?style=flat-square)](https://youtu.be/KyME2kG7_PI)
+[![WebMCP tools](https://img.shields.io/badge/WebMCP-17_tools-374151?style=flat-square)](docs/tools.md)
+[![Tests](https://img.shields.io/badge/tests-309_passing-374151?style=flat-square)](CONTRIBUTING.md)
+[![Licence](https://img.shields.io/badge/licence-MIT-374151?style=flat-square)](LICENSE)
+
+</div>
 
 Traces turns a recorded browser session into something an agent can *ask questions of*: not "summarize
 this video", but "find the exact millisecond the pay button became disabled, and tell me what
 happened just before it."
 
-Built for [The WebMCP Challenge](https://webmcp.devpost.com/) by Riko, Vicko, and Faiq.
+Built for [The WebMCP Challenge](https://webmcp.devpost.com/).
 
-- **Live demo:** <!-- TODO: production URL -->
-- **Video (3 min):** <!-- TODO: YouTube link -->
+![The agent stops, says it cannot see the screen, and asks a human to look at a specific moment](docs/images/ask-human-visual.png)
+
+- **Live demo:** [traces.ribdsp.com](https://traces.ribdsp.com)
+- **Video:** [youtu.be/KyME2kG7_PI](https://youtu.be/KyME2kG7_PI)
 - **Tool reference:** [docs/tools.md](docs/tools.md)
-
-> **Status: work in progress.** The design is settled and documented; the implementation is being
-> built during the challenge window. Sections marked <!-- TODO --> are placeholders, and every
-> measured number in these docs is filled in from a real run rather than estimated. If a claim here
-> isn't yet backed by code, [Status and limitations](#status-and-limitations) says so explicitly.
+- **Architecture:** [docs/architecture.md](docs/architecture.md) · **Threat model:** [docs/threat-model.md](docs/threat-model.md)
 
 ---
 
@@ -87,6 +95,28 @@ Agent: propose_report({ ... })
 
 Root cause in under 90 seconds, and the human's fifteen minutes of scrubbing was replaced by one
 click that only a human could make.
+
+---
+
+## What it looks like
+
+Three moments from one investigation. Every number in these screenshots came out of a real run
+against a synthetic recording in [`bugbait/`](bugbait) — none of it is mocked up.
+
+**The agent narrows a 45-second recording to one millisecond, and the activity feed records who did
+it.** Seventeen probes, then the human's playhead is moved to the answer.
+
+![Activity feed showing the agent bisecting to 28.049 seconds in 17 probes, then seeking there](docs/images/bisect-activity.png)
+
+**Ranked explanations, each one citing evidence you can click.** A card with no evidence behind it is
+rejected by the page rather than rendered.
+
+![Four ranked hypothesis cards, each citing timestamped evidence, with promote and reject buttons](docs/images/ranked-hypotheses.png)
+
+**A bug report whose reproduction steps are checked against the event stream.** Nine steps, nine
+verified, and the human still has to approve it.
+
+![A drafted bug report with nine reproduction steps, each marked verified against recorded events](docs/images/report-draft.png)
 
 ---
 
@@ -467,12 +497,12 @@ Stated plainly, because a README that oversells is worse than one that's short.
 - No authentication, no multi-tenancy, no rate limiting. This is a local-first tool.
 - Recordings must be rrweb format. There's no importer for LogRocket or FullStory exports.
 
+**Left as a stub:** `registerDynamicTool` (`traces/src/lib/webmcp/register-tools.ts:133`) throws, and
+nothing calls it — promoting a hypothesis does not mint an eighteenth tool. It's the one piece of the
+design that didn't get built.
+
 **Not attempted:** automated fixes, integration with issue trackers, replay of network responses,
 mobile-native sessions.
-
-<!-- BEFORE PUSHING: replace the live URL, the video link, and both measured character counts in
-     "Making the DOM legible to a model". Update this Status section to reflect what actually
-     shipped, and delete the work-in-progress note at the top of this file once it has. -->
 
 ---
 
@@ -484,7 +514,7 @@ repository**.
 
 ## Licence
 
-[MIT](LICENSE) — © 2026 Riko, Vicko, Faiq and the Traces contributors.
+[MIT](LICENSE) — © 2026 the Traces contributors.
 
 The collective notice is deliberate: everyone who contributes keeps copyright over their own work,
 and the licence covers all of it on the same terms. Git history is the authoritative list of who

@@ -4,7 +4,7 @@ import { HYPOTHESES_MAX, normaliseConfidences, validateHypotheses } from './prop
 import { capList, capText, clampToRecording } from './tool-support'
 
 /**
- * The validators and budgets Vicko's tools are built on, tested away from the store and the gate.
+ * The validators and budgets the blocking tools are built on, tested away from the store and the gate.
  *
  * These are the parts where a bug is silent rather than loud. A confidence set that does not sum to 1
  * still renders — as bars that all look near-certain. A choice one character too long still renders — as
