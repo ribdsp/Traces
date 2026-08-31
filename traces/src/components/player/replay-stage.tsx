@@ -159,10 +159,12 @@ export function ReplayStage() {
       {recording && viewport ? (
         /*
           10px, and allowed to be: an instrument readout in the corner of the frame, not text to read.
-          `muted` rather than `faint`, though — measured at 3.09:1 against `bg-base`, which is below the
-          4.5:1 this size needs, and this is the one readout that sits alone on the frame a recording
-          spends its whole runtime pointed at. `muted` is 6.07:1. Same size, same swap, same reason as the
-          ruler's tick labels in `timeline.tsx`, which is the precedent rather than a new judgement.
+          `muted` rather than `faint`, though — this is the one readout that sits alone on the frame a
+          recording spends its whole runtime pointed at, and it is read against replayed page content as
+          often as against `bg-base`. Both tones clear the 4.5:1 this size needs now that `faint` has been
+          raised for AA (`muted` 6.07:1, `faint` 5.26:1 against `bg-base`), so what picks `muted` here is
+          the margin over an unknown ground rather than the threshold. Same size, same swap, same reason as
+          the ruler's tick labels in `timeline.tsx`, which is the precedent rather than a new judgement.
         */
         <p className="absolute bottom-1 right-2 font-mono text-micro tabular-nums text-muted">
           {viewport.width}×{viewport.height} · {Math.round(scale * 100)}%
